@@ -1,22 +1,50 @@
 services:
-  ewm-service:
-    build:
-      context: ./ewm-stats/server
-      dockerfile: Dockerfile
+  server:
+    build: ewm-stats/server
+    image: server
+    container_name: server
     ports:
-      - "8080:8080"
-
-  ewm-db:
-    image: postgres:16.1
-    container_name: ewm-db
-    ports:
-      - "6543:5432"
+      - "9090:9090"
+    depends_on:
+      - stat-db
     environment:
-      - POSTGRES_PASSWORD=ewm-db
-      - POSTGRES_USER=ewm-db
-      - POSTGRES_DB=ewm-db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://stat-db:5432/ewm-stats
+      - SPRING_DATASOURCE_USERNAME=ewm-stats
+      - SPRING_DATASOURCE_PASSWORD=ewm-stats
+
+  stat-db:
+    image: postgres:16.1
+    container_name: stat-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=ewm-stats
+      - POSTGRES_USER=ewm-stats
+      - POSTGRES_DB=ewm-stats
     healthcheck:
       test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
       timeout: 5s
       interval: 5s
       retries: 10
+
+  #  ewm-service:
+  #     build:
+  #   context: ./ewm-stats/server
+  #   dockerfile: Dockerfile
+  # ports:
+  #   - "8080:8080"
+  #
+  #ewm-db:
+  # image: postgres:16.1
+  # container_name: ewm-db
+  # ports:
+  #   - "6543:5432"
+  # environment:
+  #   - POSTGRES_PASSWORD=ewm-db
+  #   - POSTGRES_USER=ewm-db
+  #   - POSTGRES_DB=ewm-db
+  # healthcheck:
+  #   test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+  #   timeout: 5s
+  #   interval: 5s
+#   retries: 10
