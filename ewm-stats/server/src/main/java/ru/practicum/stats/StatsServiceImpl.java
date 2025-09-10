@@ -1,6 +1,7 @@
 package ru.practicum.stats;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.HitRequestDto;
@@ -13,6 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -36,6 +38,7 @@ public class StatsServiceImpl implements StatsService {
             List<String> uris,
             Boolean unique
     ) {
+
         if (start == null) {
             throw new ErrorException("Не указано начало диапазона.");
         }
@@ -56,13 +59,12 @@ public class StatsServiceImpl implements StatsService {
 
         if (isUnique) {
             viewStats = statsRepository.calculateUniqueStats(uris, startDateTime, endDateTime);
+        } else {
+            viewStats = statsRepository.calculateStats(uris, startDateTime, endDateTime);
         }
-        viewStats = statsRepository.calculateStats(uris, startDateTime, endDateTime);
 
-        List<StatsResponseDto> result = viewStats.stream()
+        return viewStats.stream()
                 .map(HitMapper::toStatsResponseDto)
                 .collect(Collectors.toList());
-
-        return result;
     }
 }

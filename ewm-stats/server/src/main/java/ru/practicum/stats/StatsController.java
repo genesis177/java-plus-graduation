@@ -1,7 +1,6 @@
 package ru.practicum.stats;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -9,7 +8,6 @@ import ru.practicum.dto.HitRequestDto;
 import ru.practicum.dto.HitResponseDto;
 import ru.practicum.dto.StatsResponseDto;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController

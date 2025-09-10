@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "hits")
+@Table(name = "hits", schema = "public")
 public class Hit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,5 +20,6 @@ public class Hit {
     private String uri;
     private String ip;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Column(name = "timestamp")
     private LocalDateTime timestamp;
 }
