@@ -1,5 +1,8 @@
 services:
   stats-server:
+    build:
+      context: ./stats/server
+      dockerfile: Dockerfile
     ports:
       - "9090:9090"
 
@@ -19,8 +22,23 @@ services:
       retries: 10
 
   ewm-service:
+    build:
+      context: ./ewm-service
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
 
   ewm-db:
     image: postgres:16.1
+    container_name: ewm-db
+    ports:
+      - "6543:5432"
+    environment:
+      - POSTGRES_PASSWORD=ewm-db
+      - POSTGRES_USER=ewm-db
+      - POSTGRES_DB=ewm-db
+    healthcheck:
+      test: pg_isready -q -d $$POSTGRES_DB -U $$POSTGRES_USER
+      timeout: 5s
+      interval: 5s
+      retries: 10
