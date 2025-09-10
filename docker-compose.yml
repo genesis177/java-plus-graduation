@@ -23,7 +23,7 @@ services:
 
   ewm-service:
     build:
-      context: ./ewm-service
+      context: ./ewm-stats/server
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
