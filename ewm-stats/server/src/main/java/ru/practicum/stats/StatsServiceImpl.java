@@ -4,9 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.dto.HitRequestDto;
-import ru.practicum.dto.HitResponseDto;
-import ru.practicum.dto.StatsResponseDto;
+import ru.practicum.dto.HitDto;
+import ru.practicum.dto.StatsDto;
 import ru.practicum.exception.ErrorException;
 
 import java.time.LocalDateTime;
@@ -24,15 +23,15 @@ public class StatsServiceImpl implements StatsService {
 
     @Override
     @Transactional
-    public HitResponseDto createHit(HitRequestDto requestDto) {
+    public HitDto createHit(HitDto requestDto) {
         Hit hit = HitMapper.toHit(requestDto);
         Hit savedHit = statsRepository.save(hit);
 
-        return HitMapper.toHitResponseDto(savedHit);
+        return HitMapper.toHitDto(savedHit);
     }
 
     @Override
-    public List<StatsResponseDto> getStats(
+    public List<StatsDto> getStats(
             String start,
             String end,
             List<String> uris,

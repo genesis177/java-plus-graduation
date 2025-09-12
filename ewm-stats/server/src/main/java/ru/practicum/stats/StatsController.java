@@ -4,9 +4,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.dto.HitRequestDto;
-import ru.practicum.dto.HitResponseDto;
-import ru.practicum.dto.StatsResponseDto;
+import ru.practicum.dto.HitDto;
+import ru.practicum.dto.StatsDto;
 
 import java.util.List;
 
@@ -19,14 +18,14 @@ public class StatsController {
 
     @PostMapping("/hit")
     @ResponseStatus(HttpStatus.CREATED)
-    public HitResponseDto createHit(
-            @Valid @RequestBody HitRequestDto hitRequestDto
+    public HitDto createHit(
+            @Valid @RequestBody HitDto hitRequestDto
     ) {
         return statsService.createHit(hitRequestDto);
     }
 
     @GetMapping("/stats")
-    public List<StatsResponseDto> getStats(
+    public List<StatsDto> getStats(
             @RequestParam String start,
             @RequestParam String end,
             @RequestParam(required = false) List<String> uris,

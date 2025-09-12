@@ -15,7 +15,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class HitRequestDto {
+public class HitDto {
+
+    Long id;
+
     @NotBlank
     @Size(min = 1, max = 255)
     String app;

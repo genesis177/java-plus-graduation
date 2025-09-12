@@ -2,24 +2,23 @@ package ru.practicum.stats;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import ru.practicum.dto.HitRequestDto;
-import ru.practicum.dto.HitResponseDto;
-import ru.practicum.dto.StatsResponseDto;
+import ru.practicum.dto.HitDto;
+import ru.practicum.dto.StatsDto;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class HitMapper {
 
-    public static Hit toHit(HitRequestDto hitRequestDto) {
+    public static Hit toHit(HitDto hitDto) {
         Hit hit = new Hit();
-        hit.setApp(hitRequestDto.getApp());
-        hit.setUri(hitRequestDto.getUri());
-        hit.setIp(hitRequestDto.getIp());
-        hit.setTimestamp(hitRequestDto.getTimestamp());
+        hit.setApp(hitDto.getApp());
+        hit.setUri(hitDto.getUri());
+        hit.setIp(hitDto.getIp());
+        hit.setTimestamp(hitDto.getTimestamp());
         return hit;
     }
 
-    public static HitResponseDto toHitResponseDto(Hit hit) {
-        HitResponseDto dto = new HitResponseDto();
+    public static HitDto toHitDto(Hit hit) {
+        HitDto dto = new HitDto();
         dto.setId(hit.getId());
         dto.setApp(hit.getApp());
         dto.setUri(hit.getUri());
@@ -28,8 +27,8 @@ public final class HitMapper {
         return dto;
     }
 
-    public static StatsResponseDto toStatsResponseDto(ViewStats viewStats) {
-        StatsResponseDto responseDto = new StatsResponseDto();
+    public static StatsDto toStatsResponseDto(ViewStats viewStats) {
+        StatsDto responseDto = new StatsDto();
         responseDto.setApp(viewStats.getApp());
         responseDto.setUri(viewStats.getUri());
         responseDto.setHits(viewStats.getHits());
