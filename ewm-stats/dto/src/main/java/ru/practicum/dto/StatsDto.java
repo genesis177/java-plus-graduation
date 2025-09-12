@@ -6,16 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class HitResponseDto {
-    Long id;
+public class StatsDto {
     String app;
     String uri;
-    String ip;
-    LocalDateTime timestamp;
+    Long hits;
 }

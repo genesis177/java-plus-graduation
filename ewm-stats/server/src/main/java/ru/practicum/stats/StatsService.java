@@ -1,16 +1,15 @@
 package ru.practicum.stats;
 
-import ru.practicum.dto.HitRequestDto;
-import ru.practicum.dto.HitResponseDto;
-import ru.practicum.dto.StatsResponseDto;
+import ru.practicum.dto.HitDto;
+import ru.practicum.dto.StatsDto;
 
 import java.util.List;
 
 public interface StatsService {
 
-    HitResponseDto createHit(HitRequestDto requestDto);
+    HitDto createHit(HitDto requestDto);
 
-    List<StatsResponseDto> getStats(
+    List<StatsDto> getStats(
             String start,
             String end,
             List<String> uris,
