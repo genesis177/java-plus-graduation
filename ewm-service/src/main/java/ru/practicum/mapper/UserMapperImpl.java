@@ -1,9 +1,11 @@
 package ru.practicum.mapper;
 
+import org.springframework.stereotype.Component;
 import ru.practicum.dto.users.UserCreateDto;
 import ru.practicum.dto.users.UserDto;
 import ru.practicum.model.User;
 
+@Component
 public class UserMapperImpl implements UserMapper {
 
     @Override
