@@ -1,4 +1,4 @@
-package ru.practicum.exception.dto;
+package ru.practicum.common.exception;
 
 
 import lombok.Builder;

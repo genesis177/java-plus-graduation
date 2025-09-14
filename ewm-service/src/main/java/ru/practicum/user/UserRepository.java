@@ -1,12 +1,10 @@
-package ru.practicum.repository;
+package ru.practicum.user;
 
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import ru.practicum.model.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -19,8 +17,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @param pageable правила выборки и сортировки
      * @return коллекция {@link User}
      */
-    @Query("SELECT u " + "FROM User AS u " + "WHERE u.id IN :ids")
-    Page<User> findAllByIds(List<Long> ids, Pageable pageable);
+    Page<User> findAllByIdIn(List<Long> ids, Pageable pageable);
 
     /**
      * Метод проверяет использование почтового адреса зарегистрированными пользователями

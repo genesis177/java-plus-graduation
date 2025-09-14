@@ -1,8 +1,7 @@
-package ru.practicum.mapper;
+package ru.practicum.user;
 
-import ru.practicum.dto.users.UserCreateDto;
-import ru.practicum.dto.users.UserDto;
-import ru.practicum.model.User;
+import ru.practicum.user.dto.UserCreateDto;
+import ru.practicum.user.dto.UserDto;
 
 public interface UserMapper {
 

@@ -1,4 +1,4 @@
-package ru.practicum.model;
+package ru.practicum.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,7 +25,6 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 public class User {
-
     /**
      * Идентификатор пользователя
      */

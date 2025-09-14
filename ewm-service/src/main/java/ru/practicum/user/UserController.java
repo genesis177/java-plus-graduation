@@ -1,4 +1,4 @@
-package ru.practicum.controller;
+package ru.practicum.user;
 
 import jakarta.validation.Valid;
 import java.util.Collection;
@@ -6,7 +6,6 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,11 +13,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.dto.users.UserCreateDto;
-import ru.practicum.dto.users.UserDto;
-import ru.practicum.services.UserService;
+import ru.practicum.common.exception.ConflictException;
+import ru.practicum.common.exception.NotFoundException;
+import ru.practicum.user.dto.UserCreateDto;
+import ru.practicum.user.dto.UserDto;
 
+/**
+ * Обработка HTTP-запросов к /admin/users
+ */
 @RestController
 @RequestMapping("/admin/users")
 @RequiredArgsConstructor
@@ -36,12 +40,12 @@ public class UserController {
      * @return коллекция {@link UserDto}
      */
     @GetMapping
-    public ResponseEntity<Collection<UserDto>> getUsers(@RequestParam(name = "ids", required = false) List<Long> ids,
-                                                        @RequestParam(name = "from", required = false, defaultValue = "0") int from,
-                                                        @RequestParam(name = "size", required = false, defaultValue = "10") int size) {
-        Collection<UserDto> result = userService.getUsers(ids, from, size);
+    @ResponseStatus(HttpStatus.OK)
+    public Collection<UserDto> getUsers(@RequestParam(name = "ids", required = false) List<Long> ids,
+                                        @RequestParam(name = "from", required = false, defaultValue = "0") int from,
+                                        @RequestParam(name = "size", required = false, defaultValue = "10") int size) {
 
-        return new ResponseEntity<>(result, HttpStatus.OK);
+        return userService.getUsers(ids, from, size);
     }
 
     /**
@@ -49,23 +53,24 @@ public class UserController {
      *
      * @param dto несохраненный экземпляр класса {@link UserCreateDto}
      * @return сохраненный экземпляр класса {@link UserDto}
+     * @throws ConflictException если переданный адрес почты уже используется
      */
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@RequestBody @Valid UserCreateDto dto) {
-        UserDto result = userService.createUser(dto);
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserDto createUser(@RequestBody @Valid UserCreateDto dto) throws ConflictException {
 
-        return new ResponseEntity<>(result, HttpStatus.CREATED);
+        return userService.createUser(dto);
     }
 
     /**
      * Обработка DELETE-запроса к /admin/users/{userId}
      *
      * @param userId идентификатор удаляемого пользователя
+     * @throws NotFoundException если пользователь не найден по переданному идентификатору
      */
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable long userId) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable long userId) throws NotFoundException {
         userService.deleteUser(userId);
-
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

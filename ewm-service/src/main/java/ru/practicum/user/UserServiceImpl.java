@@ -1,4 +1,4 @@
-package ru.practicum.services;
+package ru.practicum.user;
 
 import java.util.Collection;
 import java.util.List;
@@ -8,13 +8,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
-import ru.practicum.dto.users.UserCreateDto;
-import ru.practicum.dto.users.UserDto;
-import ru.practicum.exception.ConflictException;
-import ru.practicum.exception.NotFoundException;
-import ru.practicum.mapper.UserMapper;
-import ru.practicum.model.User;
-import ru.practicum.repository.UserRepository;
+import ru.practicum.common.exception.ConflictException;
+import ru.practicum.common.exception.NotFoundException;
+import ru.practicum.user.dto.UserCreateDto;
+import ru.practicum.user.dto.UserDto;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +33,7 @@ public class UserServiceImpl implements UserService {
         if (ids == null || ids.isEmpty()) {
             searchResult = userRepository.findAll(pageRequest).getContent();
         } else {
-            searchResult = userRepository.findAllByIds(ids, pageRequest).getContent();
+            searchResult = userRepository.findAllByIdIn(ids, pageRequest).getContent();
         }
         log.info("Из хранилища получена коллекция размером {}", searchResult.size());
 
@@ -50,7 +47,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto createUser(UserCreateDto dto) {
+    public UserDto createUser(UserCreateDto dto) throws ConflictException {
         log.info("Создание пользователя на уровне сервиса");
 
         User user = userMapper.mapToUser(dto);
@@ -71,7 +68,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(long userId) {
+    public void deleteUser(long userId) throws NotFoundException {
         log.warn("Удаление пользователя по идентификатору на уровне сервиса");
 
         User user = userRepository.findById(userId)
@@ -89,10 +86,10 @@ public class UserServiceImpl implements UserService {
      *
      * @param user модель {@link User}
      */
-    private void validateUser(User user) {
-        log.info("Валидация почты модели");
+    private void validateUser(User user) throws ConflictException {
+        log.info("Валидация адреса почты модели");
         validateUserEmail(user);
-        log.info("Валидация почты завершена");
+        log.info("Валидация адреса почты завершена");
     }
 
     /**
@@ -100,7 +97,7 @@ public class UserServiceImpl implements UserService {
      *
      * @param user модель {@link User}
      */
-    private void validateUserEmail(User user) {
+    private void validateUserEmail(User user) throws ConflictException {
         boolean exists;
         if (user.getId() == null) {
             exists = userRepository.existsByEmailIgnoreCase(user.getEmail());

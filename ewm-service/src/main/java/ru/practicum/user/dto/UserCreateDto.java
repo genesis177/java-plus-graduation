@@ -1,4 +1,4 @@
-package ru.practicum.dto.users;
+package ru.practicum.user.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -11,11 +11,11 @@ import lombok.Data;
 public class UserCreateDto {
 
     @NotBlank(message = "Field: name. Error: must not be blank. Value: null")
-    @Size(max = 250)
+    @Size(min = 2, max = 250)
     private String name;
 
     @NotBlank(message = "Field: email. Error: must not be blank. Value: null")
     @Email
-    @Size(max = 254)
+    @Size(min = 6, max = 254)
     private String email;
 }
