@@ -1,4 +1,4 @@
-package ru.practicum.exception;
+package ru.practicum.common.exception;
 
 public class ErrorException extends RuntimeException {
     public ErrorException(String message) {

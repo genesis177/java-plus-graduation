@@ -1,4 +1,4 @@
-package ru.practicum.exception;
+package ru.practicum.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,11 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class ErrorResponse {
-    private Integer status;
-    private String message;
-    private String stackTrace;
+public class UserDto {
+
+    private Long id;
+    private String name;
+    private String email;
 }
