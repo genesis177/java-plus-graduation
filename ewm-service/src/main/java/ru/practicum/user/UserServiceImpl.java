@@ -19,7 +19,6 @@ import ru.practicum.user.dto.UserDto;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final UserMapper userMapper;
 
     @Override
     public Collection<UserDto> getUsers(List<Long> ids, int from, int size) {
@@ -38,7 +37,7 @@ public class UserServiceImpl implements UserService {
         log.info("Из хранилища получена коллекция размером {}", searchResult.size());
 
         Collection<UserDto> result = searchResult.stream()
-                .map(userMapper::mapToUserDto)
+                .map(UserMapper::mapToUserDto)
                 .toList();
         log.info("Полученная коллекция преобразована. Размер коллекции после преобразования {}", result.size());
 
@@ -50,7 +49,7 @@ public class UserServiceImpl implements UserService {
     public UserDto createUser(UserCreateDto dto) throws ConflictException {
         log.info("Создание пользователя на уровне сервиса");
 
-        User user = userMapper.mapToUser(dto);
+        User user = UserMapper.mapToUser(dto);
         log.info("Несохраненная модель преобразована");
 
         log.info("Валидация несохраненной модели");
@@ -58,9 +57,9 @@ public class UserServiceImpl implements UserService {
         log.info("Валидация несохраненной модели завершена");
 
         user = userRepository.save(user);
-        log.info("Сохранение модели завершено. Получено идентификатор {}", user.getId());
+        log.info("Сохранение модели завершено. Получен идентификатор {}", user.getId());
 
-        UserDto result = userMapper.mapToUserDto(user);
+        UserDto result = UserMapper.mapToUserDto(user);
         log.info("Сохраненная модель преобразована. Идентификатор модели после преобразования {}", result.getId());
 
         log.info("Возврат результатов создания пользователя на уровень контроллера");

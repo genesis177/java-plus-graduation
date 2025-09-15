@@ -1,23 +1,37 @@
 package ru.practicum.user;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 import ru.practicum.user.dto.UserCreateDto;
 import ru.practicum.user.dto.UserDto;
+import ru.practicum.user.dto.UserShortDto;
 
-public interface UserMapper {
+@Component
+@Slf4j
+public class UserMapper {
 
-    /**
-     * Метод преобразует модель {@link User} в модель {@link UserDto}
-     *
-     * @param user модель {@link User}
-     * @return модель {@link UserDto}
-     */
-    UserDto mapToUserDto(User user);
+    public static UserDto mapToUserDto(User user) {
+        log.info("Преобразование модели {} в модель {} ", User.class, UserDto.class);
+        return UserDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+    }
 
-    /**
-     * Метод преобразует модель {@link UserCreateDto} в модель {@link User}
-     *
-     * @param dto модель {@link UserCreateDto}
-     * @return модель {@link User}
-     */
-    User mapToUser(UserCreateDto dto);
+    public static User mapToUser(UserCreateDto dto) {
+        log.info("Преобразование модели {} в  модель {}", UserCreateDto.class, User.class);
+        return User.builder()
+                .name(dto.getName())
+                .email(dto.getEmail())
+                .build();
+    }
+
+    public static UserShortDto mapToUserShortDto(User user) {
+        log.info("Преобразование модели {} в краткую модель {}", User.class, UserShortDto.class);
+        return UserShortDto.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .build();
+    }
 }
