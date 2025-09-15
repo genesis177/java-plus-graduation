@@ -67,7 +67,7 @@ public class EventMapper {
                 .build();
     }
 
-    public static Event updateFields(Event event, EventUpdateDto dto) {
+    public static void updateFields(Event event, EventUpdateDto dto) {
         log.info("Дополнение модели {} данными из модели {}", Event.class, EventUpdateDto.class);
 
         if (dto.hasAnnotation()) {
@@ -102,13 +102,12 @@ public class EventMapper {
             switch (dto.getStateAction()) {
                 case CANCEL_REVIEW -> event.setState(States.CANCELED);
                 case SEND_TO_REVIEW -> event.setState(States.PENDING);
+                default -> throw new IllegalStateException("Unexpected value: " + dto.getStateAction());
             }
         }
 
         if (dto.hasTitle()) {
             event.setTitle(dto.getTitle());
         }
-
-        return event;
     }
 }
