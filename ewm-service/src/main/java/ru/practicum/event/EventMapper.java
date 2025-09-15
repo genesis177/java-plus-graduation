@@ -100,12 +100,8 @@ public class EventMapper {
 
         if (dto.hasStateAction()) {
             switch (dto.getStateAction()) {
-                case CANCEL_REVIEW -> {
-                    event.setState(States.CANCELED);
-                }
-                case SEND_TO_REVIEW -> {
-                    event.setState(States.PENDING);
-                }
+                case CANCEL_REVIEW -> event.setState(States.CANCELED);
+                case SEND_TO_REVIEW -> event.setState(States.PENDING);
             }
         }
 
