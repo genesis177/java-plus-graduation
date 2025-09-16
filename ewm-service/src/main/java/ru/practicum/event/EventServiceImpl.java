@@ -1,5 +1,6 @@
 package ru.practicum.event;
 
+import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
@@ -55,6 +56,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public EventFullDto createEvent(long userId, EventCreateDto dto) throws NotFoundException, ConflictException {
         log.info("Создание события на уровне сервиса");
 
@@ -109,7 +111,7 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         log.info("Передан идентификатор события: {}", event.getId());
 
-        if (!user.getId().equals(event.getId())) {
+        if (!user.getId().equals(event.getInitiator().getId())) {
             throw new ConflictException(
                     "User with id=" + user.getId() + " is not initiator of event with id=" + event.getId());
         }
@@ -123,6 +125,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional
     public EventFullDto updateEvent(long userId, long eventId, EventUpdateDto dto) throws NotFoundException,
                                                                                           ConflictException {
         log.info("Обновление события на уровне сервиса");

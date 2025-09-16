@@ -1,5 +1,6 @@
 package ru.practicum.user;
 
+import jakarta.transaction.Transactional;
 import java.util.Collection;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserDto createUser(UserCreateDto dto) throws ConflictException {
         log.info("Создание пользователя на уровне сервиса");
 
@@ -67,6 +69,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(long userId) throws NotFoundException {
         log.warn("Удаление пользователя по идентификатору на уровне сервиса");
 
