@@ -39,6 +39,11 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/ewm-db
       - SPRING_DATASOURCE_USERNAME=ewm-db
       - SPRING_DATASOURCE_PASSWORD=ewm-db
+    healthcheck:
+      test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
+      timeout: 5s
+      interval: 5s
+      retries: 5
 
   ewm-db:
     image: postgres:16.1
