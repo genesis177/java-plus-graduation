@@ -21,7 +21,7 @@ import ru.practicum.user.dto.UserCreateDto;
 import ru.practicum.user.dto.UserDto;
 
 /**
- * Обработка HTTP-запросов к /admin/users
+ * API для работы с пользователями
  */
 @RestController
 @RequestMapping("/admin/users")
@@ -32,11 +32,11 @@ public class UserController {
     private final UserService userService;
 
     /**
-     * Обработка GET-запроса к /admin/users
+     * Получение информации о пользователях
      *
-     * @param ids список идентификаторов пользователей
-     * @param from номер начального элемента
-     * @param size максимальный размер коллекции
+     * @param ids id пользователей
+     * @param from количество элементов, которые нужно пропустить для формирования текущего набора
+     * @param size количество элементов в наборе
      * @return коллекция {@link UserDto}
      */
     @GetMapping
@@ -49,10 +49,10 @@ public class UserController {
     }
 
     /**
-     * Обработка POST-запроса к /admin/users
+     * Добавление нового пользователя
      *
-     * @param dto несохраненный экземпляр класса {@link UserCreateDto}
-     * @return сохраненный экземпляр класса {@link UserDto}
+     * @param dto Данные добавляемого пользователя
+     * @return Данные добавленного пользователя
      * @throws ConflictException если переданный адрес почты уже используется
      */
     @PostMapping
@@ -63,9 +63,9 @@ public class UserController {
     }
 
     /**
-     * Обработка DELETE-запроса к /admin/users/{userId}
+     * Удаление пользователя
      *
-     * @param userId идентификатор удаляемого пользователя
+     * @param userId id пользователя
      * @throws NotFoundException если пользователь не найден по переданному идентификатору
      */
     @DeleteMapping("/{userId}")
