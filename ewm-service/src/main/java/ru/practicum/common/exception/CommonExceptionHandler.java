@@ -39,4 +39,17 @@ public class CommonExceptionHandler {
                 .timestamp(LocalDateTime.now().format(DATE_TIME_FORMATTER))
                 .build();
     }
+
+    @ExceptionHandler(AlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponseDto handleAlreadyExists(final AlreadyExistsException e) {
+        log.warn("Вызвано исключение AlreadyExistsException с текстом {}", e.getMessage());
+
+        return ErrorResponseDto.builder()
+                .status(HttpStatus.CONFLICT.toString())
+                .reason("The required object already exists.")
+                .message(e.getMessage())
+                .timestamp(LocalDateTime.now().format(DATE_TIME_FORMATTER))
+                .build();
+    }
 }

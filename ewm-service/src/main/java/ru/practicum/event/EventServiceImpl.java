@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -18,6 +19,8 @@ import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.EventUpdateDto;
 import ru.practicum.user.User;
 import ru.practicum.user.UserRepository;
+import ru.practicum.category.repository.CategoryRepository;
+import ru.practicum.category.model.Category;
 
 @Service
 @RequiredArgsConstructor
@@ -28,11 +31,14 @@ public class EventServiceImpl implements EventService {
 
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+
+    @Qualifier("mainCategoryRepository")
     private final CategoryRepository categoryRepository;
+
     private final LocationRepository locationRepository;
 
     @Override
-    public Collection<EventShortDto> getEventsByUserId(long userId, int from, int size) throws NotFoundException {
+    public Collection<EventShortDto> getEventsByUserId(long userId, int from, int size) {
         log.info("Запрос списка событий, созданных пользователем на уровне сервиса");
 
         User user = userRepository.findById(userId)
@@ -57,7 +63,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventFullDto createEvent(long userId, EventCreateDto dto) throws NotFoundException, ConflictException {
+    public EventFullDto createEvent(long userId, EventCreateDto dto) {
         log.info("Создание события на уровне сервиса");
 
         User user = userRepository.findById(userId)
@@ -69,7 +75,7 @@ public class EventServiceImpl implements EventService {
         log.info("Передан идентификатор категории: {}", category.getId());
 
         Event event = EventMapper.mapToEvent(dto);
-        event.setCategory(category);
+        event.setCategory(mapCategoryToEventCategory(category));
 
         if (dto.getLocation() != null) {
             Location location = LocationMapper.mapToLocation(dto.getLocation());
@@ -94,13 +100,12 @@ public class EventServiceImpl implements EventService {
         completeModel(result);
         log.info("Сохраненная модель преобразована. Идентификатор модели после преобразования {}", result.getId());
 
-        log.info("Возврат результатов создания пользователя на уровень контроллера");
+        log.info("Возврат результатов создания события на уровень контроллера");
         return result;
     }
 
     @Override
-    public EventFullDto getEventByUserIdAndEventId(long userId, long eventId) throws NotFoundException,
-                                                                                     ConflictException {
+    public EventFullDto getEventByUserIdAndEventId(long userId, long eventId) {
         log.info("Поиск полной информации о событии на уровне сервиса");
 
         User user = userRepository.findById(userId)
@@ -126,8 +131,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventFullDto updateEvent(long userId, long eventId, EventUpdateDto dto) throws NotFoundException,
-                                                                                          ConflictException {
+    public EventFullDto updateEvent(long userId, long eventId, EventUpdateDto dto) {
         log.info("Обновление события на уровне сервиса");
 
         User user = userRepository.findById(userId)
@@ -135,12 +139,19 @@ public class EventServiceImpl implements EventService {
         log.info("Передан идентификатор пользователя: {}", user.getId());
 
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("User with id=" + eventId + " was not found"));
+                .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         log.info("Передан идентификатор обновляемого события: {}", event.getId());
 
         if (!event.getInitiator().getId().equals(user.getId())) {
             throw new ConflictException(
                     "User with id=" + user.getId() + " is not initiator of event with id=" + event.getId());
+        }
+
+        // Если обновляется категория
+        if (dto.getCategory() != null) {
+            Category category = categoryRepository.findById(dto.getCategory())
+                    .orElseThrow(() -> new NotFoundException("Category with id=" + dto.getCategory() + " was not found"));
+            event.setCategory(mapCategoryToEventCategory(category));
         }
 
         EventMapper.updateFields(event, dto);
@@ -210,7 +221,7 @@ public class EventServiceImpl implements EventService {
      * @param event событие
      * @throws ConflictException если нарушены ограничения по дате события
      */
-    private void validateEvent(Event event) throws ConflictException {
+    private void validateEvent(Event event) {
         log.info("Валидация даты события");
         validateEventDate(event.getEventDate());
         log.info("Валидация даты события завершена");
@@ -222,11 +233,21 @@ public class EventServiceImpl implements EventService {
      * @param eventDate дата события
      * @throws ConflictException если нарушены ограничения по дате события
      */
-    private void validateEventDate(LocalDateTime eventDate) throws ConflictException {
+    private void validateEventDate(LocalDateTime eventDate) {
         if (eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
             throw new ConflictException(
                     "Field: eventDate. Error: должно содержать дату, которая не раньше, чем через 2 часа. Value: "
-                            + eventDate.plusHours(2).format(DATE_TIME_FORMATTER));
+                            + eventDate.format(DATE_TIME_FORMATTER));
         }
+    }
+
+    /**
+     * Метод преобразует категорию из нового пакета в категорию для события
+     */
+    private ru.practicum.event.Category mapCategoryToEventCategory(Category category) {
+        return ru.practicum.event.Category.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .build();
     }
 }
