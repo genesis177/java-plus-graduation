@@ -11,7 +11,6 @@ import ru.practicum.category.Category;
 import ru.practicum.category.CategoryService;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
-import ru.practicum.dto.StatsDto;
 import ru.practicum.event.Event;
 import ru.practicum.event.EventMapper;
 import ru.practicum.event.EventRepository;
@@ -73,7 +72,7 @@ public class AdminEventServiceImpl implements AdminEventService {
                                                 Integer from,
                                                 Integer size) throws BadRequestException {
         log.info("Получен запрос администратора на получение события с фильтрами");
-        if((rangeStart != null) && (rangeEnd != null) && (rangeStart.isAfter(rangeEnd))){
+        if ((rangeStart != null) && (rangeEnd != null) && (rangeStart.isAfter(rangeEnd))) {
             throw new BadRequestException("Время начала не может быть позже времени конца");
         }
 
