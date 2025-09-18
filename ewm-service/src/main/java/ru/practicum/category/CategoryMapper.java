@@ -1,8 +1,7 @@
-package ru.practicum.event;
+package ru.practicum.category;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import ru.practicum.event.dto.CategoryDto;
 
 @Component
 @Slf4j
