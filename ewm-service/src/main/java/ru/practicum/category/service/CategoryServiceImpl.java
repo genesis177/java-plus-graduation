@@ -1,7 +1,7 @@
 package ru.practicum.category.service;
 
 import java.util.List;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -10,16 +10,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.category.dto.*;
 import ru.practicum.category.mapper.CategoryMapper;
-import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
+import ru.practicum.event.Category;
 import ru.practicum.event.EventRepository;
-import ru.practicum.common.exception.AlreadyExistsException;
-import ru.practicum.common.exception.ConflictException;
-import ru.practicum.common.exception.NotFoundException;
 
 @Transactional
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class CategoryServiceImpl implements CategoryService {
 
@@ -28,14 +25,14 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDto addCategory(NewCategoryDto dto) {
-        log.info("Validating category dto: {}", dto);
+        log.info("Проверка dto категории: {}", dto);
         if (repository.existsByName(dto.getName())) {
-            throw new AlreadyExistsException("Category with name " + dto.getName() + " already exists");
+            throw new RuntimeException("Категория с именем " + dto.getName() + " уже существует");
         }
 
         Category category = CategoryMapper.toCategory(dto);
         repository.save(category);
-        log.info("Category saved: {}", category);
+        log.info("Категория сохранена: {}", category);
 
         return CategoryMapper.toCategoryDto(category);
     }
@@ -43,35 +40,34 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional(readOnly = true)
     public List<CategoryDto> getCategory(int from, int size) {
-
         Pageable pageable = PageRequest.of(from / size, size);
-
-        log.info("Get all categories with pagination from={}, size={}", from, size);
+        log.info("Получить все категории с пагинацией from={}, size={}", from, size);
 
         Page<Category> categoryPage = repository.findAll(pageable);
-
         return CategoryMapper.toCategoryDtoList(categoryPage.getContent());
     }
 
     @Override
     @Transactional(readOnly = true)
     public CategoryDto getCategoryById(Long id) {
-        log.info("Get category by id: {}", id);
+        log.info("Получить категорию по id: {}", id);
 
         return repository.findById(id)
                 .map(CategoryMapper::toCategoryDto)
-                .orElseThrow(() -> new NotFoundException("Category with id " + id + " not found"));
+                .orElseThrow(() -> new RuntimeException("Категория с id " + id + " не найдена"));
     }
 
     @Override
     public CategoryDto updateCategory(Long id, NewCategoryDto dto) {
-        log.info("Update category: {}", dto);
+        log.info("Обновить категорию: {}", dto);
         Category category = repository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Category with id " + id + " not found"));
+                .orElseThrow(() -> new RuntimeException("Категория с id " + id + " не найдена"));
+
         if (repository.existsByName(dto.getName()) && !category.getName().equals(dto.getName())) {
-            log.warn("Failed to update category. Name '{}' already exists.", dto.getName());
-            throw new AlreadyExistsException("Category name already exists.");
+            log.warn("Не удалось обновить категорию. Имя '{}' уже существует.", dto.getName());
+            throw new RuntimeException("Имя категории уже существует.");
         }
+
         category.setName(dto.getName());
         repository.save(category);
         return CategoryMapper.toCategoryDto(category);
@@ -79,13 +75,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void deleteCategory(Long id) {
-        log.info("Delete category by id: {}", id);
+        log.info("Удалить категорию по id: {}", id);
         if (!repository.existsById(id)) {
-            throw new NotFoundException("Category with id " + id + " not found");
+            throw new RuntimeException("Категория с id " + id + " не найдена");
         }
         if (eventRepository.existsByCategoryId(id)) {
-            log.warn("Category with id {} is in use by an event and cannot be deleted.", id);
-            throw new ConflictException("Cannot be deleted; it's in use by an event.");
+            log.warn("Категория с id {} используется событием и не может быть удалена.", id);
+            throw new RuntimeException("Не может быть удалена; используется событием.");
         }
         repository.deleteById(id);
     }

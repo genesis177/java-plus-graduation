@@ -8,8 +8,8 @@ import ru.practicum.event.dto.CategoryDto;
 @Slf4j
 public class CategoryMapper {
 
-    public static CategoryDto mapToCategoryDto(ru.practicum.category.model.Category category) {
-        log.info("Преобразование модели БД {} в модель {}", ru.practicum.category.model.Category.class, CategoryDto.class);
+    public static CategoryDto mapToCategoryDto(ru.practicum.event.Category category) {
+        log.info("Преобразование модели БД {} в модель {}", ru.practicum.event.Category.class, CategoryDto.class);
         return CategoryDto.builder()
                 .id(category.getId())
                 .name(category.getName())
