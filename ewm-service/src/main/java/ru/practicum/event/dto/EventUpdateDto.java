@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.event.enums.StateActions;
-import ru.practicum.location.LocationDto;
 
 @Data
 @Builder

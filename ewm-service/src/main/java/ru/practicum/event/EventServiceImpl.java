@@ -1,4 +1,4 @@
-package ru.practicum.event.services;
+package ru.practicum.event;
 
 import jakarta.transaction.Transactional;
 
@@ -14,26 +14,17 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
-import ru.practicum.category.Category;
-import ru.practicum.category.CategoryRepository;
-import ru.practicum.event.Event;
-import ru.practicum.event.EventMapper;
-import ru.practicum.event.EventRepository;
 import ru.practicum.event.dto.EventCreateDto;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.EventUpdateDto;
-import ru.practicum.event.services.interfaces.PrivateEventService;
-import ru.practicum.location.Location;
-import ru.practicum.location.LocationMapper;
-import ru.practicum.location.LocationRepository;
 import ru.practicum.user.User;
 import ru.practicum.user.UserRepository;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PrivateEventServiceImpl implements PrivateEventService {
+public class EventServiceImpl implements EventService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -50,7 +41,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
                 .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
         log.info("Передан идентификатор инициатора событий: {}", user.getId());
 
-        PageRequest pageRequest = PageRequest.of(from, size, Sort.by(Direction.ASC, "id"));
+        PageRequest pageRequest = PageRequest.of(from / size, size, Sort.by(Direction.ASC, "id"));
 
         Collection<Event> searchResult = eventRepository.findAllByInitiatorId(user.getId(), pageRequest).getContent();
         log.info("Из хранилища получена коллекция размером {}", searchResult.size());
@@ -105,13 +96,12 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         completeModel(result);
         log.info("Сохраненная модель преобразована. Идентификатор модели после преобразования {}", result.getId());
 
-        log.info("Возврат результатов создания пользователя на уровень контроллера");
+        log.info("Возврат результатов создания события на уровень контроллера");
         return result;
     }
 
     @Override
-    public EventFullDto getEventByUserIdAndEventId(long userId, long eventId) throws NotFoundException,
-            ConflictException {
+    public EventFullDto getEventByUserIdAndEventId(long userId, long eventId) throws NotFoundException, ConflictException {
         log.info("Поиск полной информации о событии на уровне сервиса");
 
         User user = userRepository.findById(userId)
@@ -137,8 +127,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
     @Override
     @Transactional
-    public EventFullDto updateEvent(long userId, long eventId, EventUpdateDto dto) throws NotFoundException,
-            ConflictException {
+    public EventFullDto updateEvent(long userId, long eventId, EventUpdateDto dto) throws NotFoundException, ConflictException {
         log.info("Обновление события на уровне сервиса");
 
         User user = userRepository.findById(userId)
@@ -146,12 +135,19 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         log.info("Передан идентификатор пользователя: {}", user.getId());
 
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("User with id=" + eventId + " was not found"));
+                .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         log.info("Передан идентификатор обновляемого события: {}", event.getId());
 
         if (!event.getInitiator().getId().equals(user.getId())) {
             throw new ConflictException(
                     "User with id=" + user.getId() + " is not initiator of event with id=" + event.getId());
+        }
+
+        // Если обновляется категория
+        if (dto.getCategory() != null) {
+            Category category = categoryRepository.findById(dto.getCategory())
+                    .orElseThrow(() -> new NotFoundException("Category with id=" + dto.getCategory() + " was not found"));
+            event.setCategory(category);
         }
 
         EventMapper.updateFields(event, dto);
@@ -173,11 +169,6 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         return result;
     }
 
-    /**
-     * Метод заполняет переданную коллекцию событий
-     *
-     * @param events коллекция событий
-     */
     private void completeCollection(Collection<EventShortDto> events) {
         log.info("Заполнение коллекции событий");
 
@@ -196,11 +187,6 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         log.info("Заполнение коллекции завершено");
     }
 
-    /**
-     * Метод заполняет переданную модель события
-     *
-     * @param event событие
-     */
     private void completeModel(EventFullDto event) {
         log.info("Заполнение события");
 
@@ -215,29 +201,17 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         log.info("Заполнение события завершено");
     }
 
-    /**
-     * Метод проверяет правильность заполнения полей события
-     *
-     * @param event событие
-     * @throws ConflictException если нарушены ограничения по дате события
-     */
     private void validateEvent(Event event) throws ConflictException {
         log.info("Валидация даты события");
         validateEventDate(event.getEventDate());
         log.info("Валидация даты события завершена");
     }
 
-    /**
-     * Метод проверяет правильность заполнения даты события
-     *
-     * @param eventDate дата события
-     * @throws ConflictException если нарушены ограничения по дате события
-     */
     private void validateEventDate(LocalDateTime eventDate) throws ConflictException {
         if (eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
             throw new ConflictException(
                     "Field: eventDate. Error: должно содержать дату, которая не раньше, чем через 2 часа. Value: "
-                            + eventDate.plusHours(2).format(DATE_TIME_FORMATTER));
+                            + eventDate.format(DATE_TIME_FORMATTER));
         }
     }
 }

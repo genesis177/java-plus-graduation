@@ -2,17 +2,14 @@ package ru.practicum.event;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import ru.practicum.category.CategoryMapper;
 import ru.practicum.event.dto.EventCreateDto;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.EventUpdateDto;
 import ru.practicum.event.enums.States;
-import ru.practicum.location.LocationMapper;
 import ru.practicum.user.UserMapper;
 
 @Component
@@ -27,7 +24,7 @@ public class EventMapper {
         return EventShortDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())
-                .category(CategoryMapper.mapToCategoryDto(event.getCategory()))
+                .category(mapToEventCategoryDto(event.getCategory()))
                 .eventDate(event.getEventDate().format(DATE_TIME_FORMATTER))
                 .initiator(UserMapper.mapToUserShortDto(event.getInitiator()))
                 .paid(event.getPaid())
@@ -55,7 +52,7 @@ public class EventMapper {
         return EventFullDto.builder()
                 .id(event.getId())
                 .annotation(event.getAnnotation())
-                .category(CategoryMapper.mapToCategoryDto(event.getCategory()))
+                .category(mapToEventCategoryDto(event.getCategory()))
                 .createdOn(event.getCreatedOn().format(DATE_TIME_FORMATTER))
                 .description(event.getDescription())
                 .eventDate(event.getEventDate().format(DATE_TIME_FORMATTER))
@@ -63,7 +60,7 @@ public class EventMapper {
                 .location(LocationMapper.mapToLocationDto(event.getLocation()))
                 .paid(event.getPaid())
                 .participantLimit(event.getParticipantLimit())
-                .publishedOn(event.getPublishedOn().format(DATE_TIME_FORMATTER))
+                .publishedOn(event.getPublishedOn() != null ? event.getPublishedOn().format(DATE_TIME_FORMATTER) : null)
                 .requestModeration(event.getRequestModeration())
                 .state(event.getState())
                 .title(event.getTitle())
@@ -112,5 +109,19 @@ public class EventMapper {
         if (dto.hasTitle()) {
             event.setTitle(dto.getTitle());
         }
+    }
+
+    /**
+     * Преобразует категорию события в DTO категории
+     */
+    private static ru.practicum.event.dto.CategoryDto mapToEventCategoryDto(ru.practicum.event.Category category) {
+        if (category == null) {
+            return null;
+        }
+
+        return ru.practicum.event.dto.CategoryDto.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .build();
     }
 }

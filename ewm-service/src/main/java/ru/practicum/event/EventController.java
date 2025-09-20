@@ -1,7 +1,6 @@
-package ru.practicum.event.controllers;
+package ru.practicum.event;
 
 import java.util.Collection;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
-import ru.practicum.event.services.interfaces.PrivateEventService;
 import ru.practicum.event.dto.EventCreateDto;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
@@ -27,16 +25,16 @@ import ru.practicum.event.dto.EventUpdateDto;
 @RestController
 @RequestMapping(path = "/users/{userId}/events")
 @RequiredArgsConstructor
-public class PrivateEventController {
+public class EventController {
 
-    private final PrivateEventService privateEventService;
+    private final EventService eventService;
 
     /**
      * Получение событий, добавленных текущим пользователем
      *
      * @param userId идентификатор пользователя
-     * @param from   номер начального элемента
-     * @param size   максимальный размер коллекции
+     * @param from номер начального элемента
+     * @param size максимальный размер коллекции
      * @return коллекция {@link EventShortDto}
      */
     @GetMapping
@@ -44,8 +42,8 @@ public class PrivateEventController {
     public Collection<EventShortDto> getEventsByUserId(@PathVariable(name = "userId") long userId,
                                                        @RequestParam(name = "from", required = false, defaultValue = "0") int from,
                                                        @RequestParam(name = "size", required = false, defaultValue = "10") int size) throws
-            NotFoundException {
-        return privateEventService.getEventsByUserId(userId, from, size);
+                                                                                                                                     NotFoundException {
+        return eventService.getEventsByUserId(userId, from, size);
     }
 
 
@@ -53,20 +51,20 @@ public class PrivateEventController {
      * Добавление нового события
      *
      * @param userId id текущего пользователя
-     * @param dto    данные добавляемого события
+     * @param dto данные добавляемого события
      * @return данные добавленного события
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto createEvent(@PathVariable(name = "userId") long userId,
                                     @RequestBody EventCreateDto dto) throws NotFoundException, ConflictException {
-        return privateEventService.createEvent(userId, dto);
+        return eventService.createEvent(userId, dto);
     }
 
     /**
      * Получение полной информации о событии, добавленном текущим пользователем
      *
-     * @param userId  id текущего пользователя
+     * @param userId id текущего пользователя
      * @param eventId id события
      * @return данные найденного события
      */
@@ -74,17 +72,17 @@ public class PrivateEventController {
     @ResponseStatus(HttpStatus.OK)
     public EventFullDto getEventByUserIdAndEventId(@PathVariable(name = "userId") long userId,
                                                    @PathVariable(name = "eventId") long eventId) throws
-            ConflictException,
-            NotFoundException {
-        return privateEventService.getEventByUserIdAndEventId(userId, eventId);
+                                                                                                 ConflictException,
+                                                                                                 NotFoundException {
+        return eventService.getEventByUserIdAndEventId(userId, eventId);
     }
 
     /**
      * Изменение события, добавленного текущим пользователем
      *
-     * @param userId  id текущего пользователя
+     * @param userId id текущего пользователя
      * @param eventId id события
-     * @param dto     новые данные события
+     * @param dto новые данные события
      * @return данные обновленного события
      */
     @PatchMapping(value = "/{eventId}")
@@ -92,6 +90,6 @@ public class PrivateEventController {
     public EventFullDto updateEvent(@PathVariable(name = "userId") long userId,
                                     @PathVariable(name = "eventId") long eventId,
                                     @RequestBody EventUpdateDto dto) throws ConflictException, NotFoundException {
-        return privateEventService.updateEvent(userId, eventId, dto);
+        return eventService.updateEvent(userId, eventId, dto);
     }
 }

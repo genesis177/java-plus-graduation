@@ -3,7 +3,6 @@ package ru.practicum.common.exception;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -41,14 +40,14 @@ public class CommonExceptionHandler {
                 .build();
     }
 
-    @ExceptionHandler(BadRequestException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponseDto handleNotFound(final BadRequestException e) {
-        log.warn("Вызвано исключение BadRequestException с текстом {}", e.getMessage());
+    @ExceptionHandler(AlreadyExistsException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponseDto handleAlreadyExists(final AlreadyExistsException e) {
+        log.warn("Вызвано исключение AlreadyExistsException с текстом {}", e.getMessage());
 
         return ErrorResponseDto.builder()
-                .status(HttpStatus.NOT_FOUND.toString())
-                .reason("The required object was not found.")
+                .status(HttpStatus.CONFLICT.toString())
+                .reason("The required object already exists.")
                 .message(e.getMessage())
                 .timestamp(LocalDateTime.now().format(DATE_TIME_FORMATTER))
                 .build();
