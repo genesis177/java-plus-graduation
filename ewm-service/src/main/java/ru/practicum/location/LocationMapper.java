@@ -1,10 +1,7 @@
-package ru.practicum.event;
+package ru.practicum.location;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-import ru.practicum.event.dto.LocationDto;
 
-@Component
 @Slf4j
 public class LocationMapper {
 

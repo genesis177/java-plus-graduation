@@ -1,4 +1,4 @@
-package ru.practicum.event;
+package ru.practicum.category;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
