@@ -1,4 +1,4 @@
-package ru.practicum.event.dto;
+package ru.practicum.location;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;

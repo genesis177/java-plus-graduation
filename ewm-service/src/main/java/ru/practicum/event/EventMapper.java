@@ -2,14 +2,17 @@ package ru.practicum.event;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import ru.practicum.category.CategoryMapper;
 import ru.practicum.event.dto.EventCreateDto;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.EventUpdateDto;
 import ru.practicum.event.enums.States;
+import ru.practicum.location.LocationMapper;
 import ru.practicum.user.UserMapper;
 
 @Component

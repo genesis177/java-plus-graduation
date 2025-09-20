@@ -3,6 +3,7 @@ package ru.practicum.common.exception;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -31,6 +32,19 @@ public class CommonExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponseDto handleNotFound(final NotFoundException e) {
         log.warn("Вызвано исключение NotFoundException с текстом {}", e.getMessage());
+
+        return ErrorResponseDto.builder()
+                .status(HttpStatus.NOT_FOUND.toString())
+                .reason("The required object was not found.")
+                .message(e.getMessage())
+                .timestamp(LocalDateTime.now().format(DATE_TIME_FORMATTER))
+                .build();
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponseDto handleNotFound(final BadRequestException e) {
+        log.warn("Вызвано исключение BadRequestException с текстом {}", e.getMessage());
 
         return ErrorResponseDto.builder()
                 .status(HttpStatus.NOT_FOUND.toString())
