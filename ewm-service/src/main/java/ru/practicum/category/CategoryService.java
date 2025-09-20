@@ -4,5 +4,5 @@ import ru.practicum.common.exception.NotFoundException;
 
 public interface CategoryService {
 
-    public Category findById(long id) throws NotFoundException;
+    Category findById(long id) throws NotFoundException;
 }
