@@ -3,7 +3,6 @@ package ru.practicum.event;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.practicum.category.dto.NewCategoryDto;
-import ru.practicum.event.Category;
 import ru.practicum.event.dto.CategoryDto;
 
 import java.util.List;
