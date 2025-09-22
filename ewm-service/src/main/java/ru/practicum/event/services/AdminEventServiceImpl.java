@@ -8,7 +8,7 @@ import org.apache.coyote.BadRequestException;
 import org.springframework.stereotype.Service;
 import ru.practicum.StatsClient;
 import ru.practicum.category.Category;
-import ru.practicum.category.CategoryService;
+import ru.practicum.category.service.CategoryService;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.event.Event;
@@ -32,9 +32,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminEventServiceImpl implements AdminEventService {
 
-    private final EventRepository eventRepository;
     private final CategoryService categoryService;
     private final LocationService locationService;
+
+    private final EventRepository eventRepository;
+
     private final StatsClient statsClient;
 
     @Transactional

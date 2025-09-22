@@ -3,6 +3,7 @@ package ru.practicum.event.controllers;
 import java.util.Collection;
 import java.util.List;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,7 +66,7 @@ public class PrivateEventController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto createEvent(@PathVariable(name = "userId") long userId,
-                                    @RequestBody EventCreateDto dto) throws NotFoundException, ConflictException {
+                                    @RequestBody @Valid EventCreateDto dto) throws NotFoundException, ConflictException {
         return privateEventService.createEvent(userId, dto);
     }
 
@@ -97,7 +98,7 @@ public class PrivateEventController {
     @ResponseStatus(HttpStatus.OK)
     public EventFullDto updateEvent(@PathVariable(name = "userId") long userId,
                                     @PathVariable(name = "eventId") long eventId,
-                                    @RequestBody EventUpdateDto dto) throws ConflictException, NotFoundException {
+                                    @RequestBody @Valid EventUpdateDto dto) throws ConflictException, NotFoundException {
         return privateEventService.updateEvent(userId, eventId, dto);
     }
 

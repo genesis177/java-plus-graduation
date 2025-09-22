@@ -1,5 +1,6 @@
 package ru.practicum.event.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,6 +12,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.location.LocationDto;
+
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -32,20 +35,21 @@ public class EventCreateDto {
 
     @NotNull(message = "Field: eventDate. Error: must not be blank. Value: null")
     @Future
-    private String eventDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime eventDate;
 
     @NotNull(message = "Field: location. Error: must not be blank. Value: null")
     private LocationDto location;
 
-    @NotNull(message = "Field: paid. Error: must not be blank. Value: null")
-    private Boolean paid;
+    @Builder.Default
+    private Boolean paid = false;
 
-    @NotNull(message = "Field: participantLimit. Error: must not be blank. Value: null")
     @PositiveOrZero
-    private Integer participantLimit;
+    @Builder.Default
+    private Integer participantLimit = 0;
 
-    @NotNull(message = "Field: requestModeration. Error: must not be blank. Value: null")
-    private Boolean requestModeration;
+    @Builder.Default
+    private Boolean requestModeration = true;
 
     @NotBlank(message = "Field: title. Error: must not be blank. Value: null")
     @Size(min = 3, max = 120)
