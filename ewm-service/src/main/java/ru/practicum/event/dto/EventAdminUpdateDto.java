@@ -1,10 +1,8 @@
 package ru.practicum.event.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
-import lombok.Builder;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import ru.practicum.event.enums.StateActionsAdmin;
 import ru.practicum.location.LocationDto;
 
@@ -14,6 +12,8 @@ import java.time.LocalDateTime;
 @Builder
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class EventAdminUpdateDto {
 
 
@@ -26,6 +26,7 @@ public class EventAdminUpdateDto {
     @Size(min = 20, max = 7000)
     private String description;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     @Future
     private LocalDateTime eventDate;
 

@@ -13,7 +13,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 import ru.practicum.category.Category;
-import ru.practicum.category.CategoryRepository;
 import ru.practicum.category.service.CategoryService;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
@@ -24,13 +23,13 @@ import ru.practicum.event.dto.EventCreateDto;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.EventUpdateDto;
+import ru.practicum.event.enums.StateActions;
+import ru.practicum.event.enums.States;
 import ru.practicum.event.services.interfaces.PrivateEventService;
 import ru.practicum.location.Location;
 import ru.practicum.location.LocationMapper;
-import ru.practicum.location.LocationRepository;
 import ru.practicum.location.LocationService;
 import ru.practicum.user.User;
-import ru.practicum.user.UserRepository;
 import ru.practicum.user.UserService;
 
 @Service
@@ -153,6 +152,12 @@ public class PrivateEventServiceImpl implements PrivateEventService {
                     "User with id=" + user.getId() + " is not initiator of event with id=" + event.getId());
         }
 
+        if (event.getState() == States.PUBLISHED) {
+            throw new ConflictException("Невозможно обновить опубликованное событие");
+        }
+
+        changeEventState(event, dto);
+
         EventMapper.updateFields(event, dto);
         log.info("Обновляемая модель дополнена данными");
 
@@ -237,6 +242,13 @@ public class PrivateEventServiceImpl implements PrivateEventService {
             throw new ConflictException(
                     "Field: eventDate. Error: должно содержать дату, которая не раньше, чем через 2 часа. Value: "
                             + eventDate.plusHours(2).format(DATE_TIME_FORMATTER));
+        }
+    }
+
+    private void changeEventState(Event event, EventUpdateDto update) {
+        if (update.getStateAction() != null) {
+            if (update.getStateAction() == StateActions.SEND_TO_REVIEW) event.setState(States.PENDING);
+            if (update.getStateAction() == StateActions.CANCEL_REVIEW) event.setState(States.CANCELED);
         }
     }
 }

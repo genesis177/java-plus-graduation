@@ -23,7 +23,7 @@ public class AdminEventController {
     private final AdminEventService adminEventService;
 
     @PatchMapping("/{eventId}")
-    public EventFullDto updateEventByAdmin(@Valid @RequestBody EventAdminUpdateDto eventAdminUpdateDto,
+    public EventFullDto updateEventByAdmin(@RequestBody @Valid EventAdminUpdateDto eventAdminUpdateDto,
                                            @PathVariable(name = "eventId") @Positive long eventId)
             throws NotFoundException, BadRequestException, ConflictException {
         return adminEventService.updateEvent(eventAdminUpdateDto, eventId);

@@ -18,6 +18,7 @@ import ru.practicum.user.UserMapper;
 public class EventMapper {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     public static EventShortDto mapToEventShortDto(Event event) {
         log.info("Преобразование модели {} в модель {}", Event.class, EventShortDto.class);
         return EventShortDto.builder()
@@ -36,7 +37,7 @@ public class EventMapper {
         return Event.builder()
                 .annotation(dto.getAnnotation())
                 .description(dto.getDescription())
-                .eventDate(LocalDateTime.parse(dto.getEventDate(), DATE_TIME_FORMATTER))
+                .eventDate(dto.getEventDate())
                 .paid(dto.getPaid())
                 .participantLimit(dto.getParticipantLimit())
                 .requestModeration(dto.getRequestModeration())
@@ -75,11 +76,13 @@ public class EventMapper {
             event.setDescription(dto.getDescription());
         }
         if (dto.hasEventDate()) {
-            event.setEventDate(LocalDateTime.parse(dto.getEventDate(), DATE_TIME_FORMATTER));
+            event.setEventDate(dto.getEventDate());
         }
         if (dto.hasLocation()) {
             event.setLocation(LocationMapper.mapToLocation(dto.getLocation()));
-                    event.setTitle(dto.getTitle());
+        }
+        if (dto.hasTitle()) {
+            event.setTitle(dto.getTitle());
         }
     }
 
