@@ -43,7 +43,7 @@ public class CommonExceptionHandler {
 
     @ExceptionHandler(BadRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponseDto handleNotFound(final BadRequestException e) {
+    public ErrorResponseDto handleBadRequest(final BadRequestException e) {
         log.warn("Вызвано исключение BadRequestException с текстом {}", e.getMessage());
 
         return ErrorResponseDto.builder()

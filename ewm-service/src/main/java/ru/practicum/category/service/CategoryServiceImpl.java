@@ -9,15 +9,16 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.category.Category;
+import ru.practicum.category.CategoryMapper;
+import ru.practicum.category.CategoryRepository;
+import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.dto.NewCategoryDto;
 import ru.practicum.common.exception.AlreadyExistsException;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
-import ru.practicum.event.Category;
-import ru.practicum.event.CategoryMapper;
-import ru.practicum.event.CategoryRepository;
 import ru.practicum.event.EventRepository;
-import ru.practicum.event.dto.CategoryDto;
+import ru.practicum.event.services.interfaces.PrivateEventService;
 
 @Transactional
 @Service
@@ -89,5 +90,11 @@ public class CategoryServiceImpl implements CategoryService {
             throw new ConflictException("Не может быть удалена; используется событием.");
         }
         repository.deleteById(id);
+    }
+
+    @Override
+    public Category findById(Long id) throws NotFoundException{
+        return repository.findById(id).orElseThrow(
+                () -> new NotFoundException("Категория с id " + id + " не найдена"));
     }
 }

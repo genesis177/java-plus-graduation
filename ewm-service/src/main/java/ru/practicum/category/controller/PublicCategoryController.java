@@ -3,9 +3,9 @@ package ru.practicum.category.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.service.CategoryService;
 import ru.practicum.common.exception.NotFoundException;
-import ru.practicum.event.dto.CategoryDto;
 
 import java.util.List;
 
