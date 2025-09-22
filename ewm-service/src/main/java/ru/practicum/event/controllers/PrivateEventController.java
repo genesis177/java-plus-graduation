@@ -1,6 +1,7 @@
 package ru.practicum.event.controllers;
 
 import java.util.Collection;
+import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,10 @@ import ru.practicum.event.dto.EventCreateDto;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.EventUpdateDto;
+import ru.practicum.request.RequestService;
+import ru.practicum.request.dto.RequestGetDto;
+import ru.practicum.request.dto.RequestsChangeStatusRequestDto;
+import ru.practicum.request.dto.RequestsChangeStatusResponseDto;
 
 /**
  * Закрытый API для работы с событиями
@@ -30,6 +35,7 @@ import ru.practicum.event.dto.EventUpdateDto;
 public class PrivateEventController {
 
     private final PrivateEventService privateEventService;
+    private final RequestService requestService;
 
     /**
      * Получение событий, добавленных текущим пользователем
@@ -93,5 +99,24 @@ public class PrivateEventController {
                                     @PathVariable(name = "eventId") long eventId,
                                     @RequestBody EventUpdateDto dto) throws ConflictException, NotFoundException {
         return privateEventService.updateEvent(userId, eventId, dto);
+    }
+
+    @GetMapping("/{eventId}/requests")
+    @ResponseStatus(HttpStatus.OK)
+    public List<RequestGetDto> getRequestsByUserIdAndEventId(
+            @PathVariable(name = "userId") long userId,
+            @PathVariable(name = "eventId") long eventId
+    ) throws ConflictException, NotFoundException {
+        return requestService.getRequestsByUserIdAndEventId(userId, eventId);
+    }
+
+    @PatchMapping("/{eventId}/requests")
+    @ResponseStatus(HttpStatus.OK)
+    public RequestsChangeStatusResponseDto changeRequestsStatus(
+            @PathVariable(name = "userId") long userId,
+            @PathVariable(name = "eventId") long eventId,
+            @RequestBody RequestsChangeStatusRequestDto dto
+    ) throws ConflictException, NotFoundException {
+        return requestService.RequestsChangeStatusRequestDto(userId, eventId, dto);
     }
 }

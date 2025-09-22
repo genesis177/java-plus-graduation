@@ -50,6 +50,7 @@ public class Request {
     /**
      * Статус
      */
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
     private RequestStatus status;
 }

@@ -7,7 +7,7 @@ import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.request.dto.RequestGetDto;
 
-import java.util.Collection;
+import java.util.List;
 
 /**
  * Закрытый API для работы с запросами текущего пользователя на участие в событиях
@@ -21,7 +21,7 @@ public class RequestController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public Collection<RequestGetDto> getRequestsByUserId(
+    public List<RequestGetDto> getRequestsByUserId(
         @PathVariable(name = "userId") long userId
     ) throws NotFoundException {
         return requestService.getRequestsByUserId(userId);
