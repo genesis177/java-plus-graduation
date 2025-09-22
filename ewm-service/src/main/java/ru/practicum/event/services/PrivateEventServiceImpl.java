@@ -12,10 +12,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
+import ru.practicum.category.Category;
+import ru.practicum.category.service.CategoryService;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
-import ru.practicum.category.Category;
-import ru.practicum.category.CategoryRepository;
 import ru.practicum.event.Event;
 import ru.practicum.event.EventMapper;
 import ru.practicum.event.EventRepository;
@@ -23,12 +23,14 @@ import ru.practicum.event.dto.EventCreateDto;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.EventUpdateDto;
+import ru.practicum.event.enums.StateActions;
+import ru.practicum.event.enums.States;
 import ru.practicum.event.services.interfaces.PrivateEventService;
 import ru.practicum.location.Location;
 import ru.practicum.location.LocationMapper;
-import ru.practicum.location.LocationRepository;
+import ru.practicum.location.LocationService;
 import ru.practicum.user.User;
-import ru.practicum.user.UserRepository;
+import ru.practicum.user.UserService;
 
 @Service
 @RequiredArgsConstructor
@@ -37,17 +39,17 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private final UserRepository userRepository;
+    private final UserService userService;
+    private final CategoryService categoryService;
+    private final LocationService locationService;
+
     private final EventRepository eventRepository;
-    private final CategoryRepository categoryRepository;
-    private final LocationRepository locationRepository;
 
     @Override
     public Collection<EventShortDto> getEventsByUserId(long userId, int from, int size) throws NotFoundException {
         log.info("Запрос списка событий, созданных пользователем на уровне сервиса");
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
+        User user = userService.findById(userId);
         log.info("Передан идентификатор инициатора событий: {}", user.getId());
 
         PageRequest pageRequest = PageRequest.of(from, size, Sort.by(Direction.ASC, "id"));
@@ -71,12 +73,10 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     public EventFullDto createEvent(long userId, EventCreateDto dto) throws NotFoundException, ConflictException {
         log.info("Создание события на уровне сервиса");
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
+        User user = userService.findById(userId);
         log.info("Передан идентификатор инициатора: {}", user.getId());
 
-        Category category = categoryRepository.findById(dto.getCategory())
-                .orElseThrow(() -> new NotFoundException("Category with id=" + dto.getCategory() + " was not found"));
+        Category category = categoryService.findById(dto.getCategory());
         log.info("Передан идентификатор категории: {}", category.getId());
 
         Event event = EventMapper.mapToEvent(dto);
@@ -85,7 +85,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         if (dto.getLocation() != null) {
             Location location = LocationMapper.mapToLocation(dto.getLocation());
             if (location != null) {
-                locationRepository.save(location);
+                locationService.save(location);
                 event.setLocation(location);
             }
         }
@@ -114,8 +114,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
             ConflictException {
         log.info("Поиск полной информации о событии на уровне сервиса");
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
+        User user = userService.findById(userId);
         log.info("Передан идентификатор инициатора события: {}", user.getId());
 
         Event event = eventRepository.findById(eventId)
@@ -141,8 +140,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
             ConflictException {
         log.info("Обновление события на уровне сервиса");
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
+        User user = userService.findById(userId);
         log.info("Передан идентификатор пользователя: {}", user.getId());
 
         Event event = eventRepository.findById(eventId)
@@ -153,6 +151,12 @@ public class PrivateEventServiceImpl implements PrivateEventService {
             throw new ConflictException(
                     "User with id=" + user.getId() + " is not initiator of event with id=" + event.getId());
         }
+
+        if (event.getState() == States.PUBLISHED) {
+            throw new ConflictException("Невозможно обновить опубликованное событие");
+        }
+
+        changeEventState(event, dto);
 
         EventMapper.updateFields(event, dto);
         log.info("Обновляемая модель дополнена данными");
@@ -238,6 +242,13 @@ public class PrivateEventServiceImpl implements PrivateEventService {
             throw new ConflictException(
                     "Field: eventDate. Error: должно содержать дату, которая не раньше, чем через 2 часа. Value: "
                             + eventDate.plusHours(2).format(DATE_TIME_FORMATTER));
+        }
+    }
+
+    private void changeEventState(Event event, EventUpdateDto update) {
+        if (update.getStateAction() != null) {
+            if (update.getStateAction() == StateActions.SEND_TO_REVIEW) event.setState(States.PENDING);
+            if (update.getStateAction() == StateActions.CANCEL_REVIEW) event.setState(States.CANCELED);
         }
     }
 }

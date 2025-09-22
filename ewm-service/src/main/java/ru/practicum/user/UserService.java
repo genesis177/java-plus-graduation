@@ -36,4 +36,6 @@ public interface UserService {
      * @throws NotFoundException если пользователь не найден по переданному идентификатору
      */
     void deleteUser(long userId) throws NotFoundException;
+
+    User findById(Long id) throws NotFoundException;
 }

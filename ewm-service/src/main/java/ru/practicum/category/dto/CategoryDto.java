@@ -1,4 +1,4 @@
-package ru.practicum.category;
+package ru.practicum.category.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CategoryDto {
-
     private Long id;
     private String name;
 }
