@@ -18,7 +18,6 @@ import ru.practicum.common.exception.AlreadyExistsException;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.event.EventRepository;
-import ru.practicum.event.services.interfaces.PrivateEventService;
 
 @Transactional
 @Service
@@ -93,7 +92,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public Category findById(Long id) throws NotFoundException{
+    public Category findById(Long id) throws NotFoundException {
         return repository.findById(id).orElseThrow(
                 () -> new NotFoundException("Категория с id " + id + " не найдена"));
     }
