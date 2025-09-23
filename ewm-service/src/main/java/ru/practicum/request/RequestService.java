@@ -22,6 +22,6 @@ public interface RequestService {
     List<RequestGetDto> getRequestsByEventId(Long userId, Long eventId)
             throws ConflictException, NotFoundException;
 
-    RequestsChangeStatusResponseDto RequestsChangeStatusRequestDto(Long userId, Long eventId, RequestsChangeStatusRequestDto dto)
+    RequestsChangeStatusResponseDto requestsChangeStatusRequestDto(Long userId, Long eventId, RequestsChangeStatusRequestDto dto)
             throws ConflictException, NotFoundException;
 }

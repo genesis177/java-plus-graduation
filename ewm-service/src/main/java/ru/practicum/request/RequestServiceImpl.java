@@ -33,8 +33,7 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public List<RequestGetDto> getRequestsByUserId(long userId)
-            throws NotFoundException
-    {
+            throws NotFoundException {
         log.info("Запрос списка заявок пользователя с id: {}", userId);
 
         User user = userRepository.findById(userId)
@@ -51,8 +50,7 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public RequestGetDto createRequest(long userId, long eventId)
-            throws NotFoundException, ConflictException
-    {
+            throws NotFoundException, ConflictException {
         log.info("Добавление запроса от текущего пользователя id {} на участие в событии id {}", userId, eventId);
 
         User user = userRepository.findById(userId)
@@ -98,8 +96,7 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public RequestGetDto cancelRequest(long userId, long requestId)
-            throws NotFoundException, ConflictException
-    {
+            throws NotFoundException, ConflictException {
         log.info("Запрос на отмену своего запроса на участие в событии");
 
         User user = userRepository.findById(userId)
@@ -125,8 +122,7 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     public List<RequestGetDto> getRequestsByEventId(Long userId, Long eventId)
-            throws ConflictException, NotFoundException
-    {
+            throws ConflictException, NotFoundException {
         log.info("Получение запросов на участие в событии id {} пользователем id {}", eventId, userId);
 
         Event event = baseValidateEvent(userId, eventId);
@@ -141,9 +137,8 @@ public class RequestServiceImpl implements RequestService {
 
     @Override
     @Transactional
-    public RequestsChangeStatusResponseDto RequestsChangeStatusRequestDto(Long userId, Long eventId, RequestsChangeStatusRequestDto dto)
-            throws ConflictException, NotFoundException
-    {
+    public RequestsChangeStatusResponseDto requestsChangeStatusRequestDto(Long userId, Long eventId, RequestsChangeStatusRequestDto dto)
+            throws ConflictException, NotFoundException {
         log.info("Изменение статуса заявок на участие в событии id {} текущего пользователя id {}", eventId, userId);
 
         Event event = baseValidateEvent(userId, eventId);

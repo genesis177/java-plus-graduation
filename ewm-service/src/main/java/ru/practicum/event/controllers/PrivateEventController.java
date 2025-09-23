@@ -133,6 +133,6 @@ public class PrivateEventController {
             @PathVariable(name = "eventId") long eventId,
             @RequestBody @Valid RequestsChangeStatusRequestDto dto
     ) throws ConflictException, NotFoundException {
-        return requestService.RequestsChangeStatusRequestDto(userId, eventId, dto);
+        return requestService.requestsChangeStatusRequestDto(userId, eventId, dto);
     }
 }
