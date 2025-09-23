@@ -16,7 +16,6 @@ import ru.practicum.user.User;
 import ru.practicum.user.UserRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -62,14 +61,33 @@ public class RequestServiceImpl implements RequestService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-        validateParamsForRequestCreate(user, event);
+        validateForCreateRequest(user, event);
 
-        Request request = Request.builder()
-                .created(LocalDateTime.now())
-                .requester(user)
-                .event(event)
-                .status(event.getRequestModeration() ? RequestStatus.PENDING : RequestStatus.CONFIRMED)
-                .build();
+        boolean isModeration = event.getRequestModeration();
+        Integer participantLimit = event.getParticipantLimit();
+        Request request;
+
+        if (!isModeration || participantLimit == 0) {
+            request = Request.builder()
+                    .created(LocalDateTime.now())
+                    .requester(user)
+                    .event(event)
+                    .status(RequestStatus.CONFIRMED)
+                    .build();
+        } else {
+            int confirmedRequestsCount = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
+            int availableSlots = event.getParticipantLimit() - confirmedRequestsCount;
+
+            if (availableSlots <= 0)
+                throw new ConflictException("Event reached with id=" + eventId);
+
+            request = Request.builder()
+                    .created(LocalDateTime.now())
+                    .requester(user)
+                    .event(event)
+                    .status(RequestStatus.PENDING)
+                    .build();
+        }
 
         Request saveRequest = requestRepository.save(request);
         log.info("Создан запрос с id: {} в статусе {}", saveRequest.getId(), saveRequest.getStatus());
@@ -106,21 +124,14 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    public List<RequestGetDto> getRequestsByUserIdAndEventId(Long userId, Long eventId)
+    public List<RequestGetDto> getRequestsByEventId(Long userId, Long eventId)
             throws ConflictException, NotFoundException
     {
         log.info("Получение запросов на участие в событии id {} пользователем id {}", eventId, userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
+        Event event = baseValidateEvent(userId, eventId);
 
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-
-        if (!event.getInitiator().getId().equals(user.getId()))
-            throw new ConflictException("User with id " + user.getId() + " is not initiator of event with id=" + event.getId());
-
-        List<Request> requests = requestRepository.findAllByRequesterIdAndEventId(userId, eventId);
+        List<Request> requests = requestRepository.findAllByEventId(event.getId());
         log.info("Количество найденных запросов: {}", requests.size());
 
         return requests.stream()
@@ -135,36 +146,9 @@ public class RequestServiceImpl implements RequestService {
     {
         log.info("Изменение статуса заявок на участие в событии id {} текущего пользователя id {}", eventId, userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
-
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-
-        if (!event.getInitiator().getId().equals(user.getId()))
-            throw new ConflictException("User with id " + user.getId() + " is not initiator of event with id=" + event.getId());
-
-        List<Long> requestIds = dto.getRequestIds();
-
-        List<Request> requests = requestRepository.findByIdAndEventId(requestIds, eventId);
-
-        if (requests.size() != requestIds.size()) {
-            Set<Long> foundRequestIds = requests.stream()
-                    .map(Request::getId)
-                    .collect(Collectors.toSet());
-
-            List<Long> missingOrWrongEventIds = requestIds.stream()
-                    .filter(id -> !foundRequestIds.contains(id))
-                    .toList();
-
-            throw new NotFoundException("Requests with ids: " + missingOrWrongEventIds +
-                    " were not found to event id: " + eventId);
-        }
-
-        boolean isExistNotPendingRequest = requests.stream()
-                .anyMatch(x -> !x.getStatus().equals(RequestStatus.PENDING));
-        if (isExistNotPendingRequest)
-            throw new ConflictException("There is a request that is not in the pending status");
+        Event event = baseValidateEvent(userId, eventId);
+        List<Request> requests = validateAndGetRequests(dto.getRequestIds(), eventId);
+        validateRequestsStatus(requests);
 
         int confirmedRequestsCount = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
         int availableSlots = event.getParticipantLimit() - confirmedRequestsCount;
@@ -172,14 +156,13 @@ public class RequestServiceImpl implements RequestService {
         List<Long> confirmedIds = Collections.emptyList();
         List<Long> rejectedIds = Collections.emptyList();
 
-        RequestStatus newStatus = dto.getStatus();
-        if (newStatus.equals(RequestStatus.CONFIRMED)) {
+        if (dto.getStatus().equals(RequestStatus.CONFIRMED)) {
 
             if ((availableSlots - requests.size()) < 0)
                 throw new ConflictException("The participant limit has been reached for event id: " + eventId);
 
-            requestRepository.updateStatusByIds(requestIds, RequestStatus.CONFIRMED);
-            confirmedIds = requestIds;
+            requestRepository.updateStatusByIds(dto.getRequestIds(), RequestStatus.CONFIRMED);
+            confirmedIds = dto.getRequestIds();
 
             if ((availableSlots - requests.size()) == 0) {
                 List<Request> rejectedRequests = requestRepository.findByEventIdAndStatus(eventId, RequestStatus.PENDING);
@@ -191,9 +174,9 @@ public class RequestServiceImpl implements RequestService {
                 requestRepository.updateStatusByIds(rejectedIds, RequestStatus.CONFIRMED);
 
             }
-        } else if (newStatus.equals(RequestStatus.REJECTED)) {
-            requestRepository.updateStatusByIds(requestIds, RequestStatus.REJECTED);
-            rejectedIds = requestIds;
+        } else if (dto.getStatus().equals(RequestStatus.REJECTED)) {
+            requestRepository.updateStatusByIds(dto.getRequestIds(), RequestStatus.REJECTED);
+            rejectedIds = dto.getRequestIds();
         }
 
         List<Request> confirmedRequests = confirmedIds.isEmpty() ?
@@ -214,9 +197,47 @@ public class RequestServiceImpl implements RequestService {
         return response;
     }
 
-    private void validateParamsForRequestCreate(User user, Event event)
-            throws ConflictException
-    {
+    private Event baseValidateEvent(Long userId, Long eventId) throws NotFoundException, ConflictException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
+
+        if (!event.getInitiator().getId().equals(userId)) {
+            throw new ConflictException("User with id " + userId + " is not initiator of event with id=" + eventId);
+        }
+
+        return event;
+    }
+
+    private List<Request> validateAndGetRequests(List<Long> requestIds, Long eventId) throws NotFoundException {
+        List<Request> requests = requestRepository.findByIdInAndEventId(requestIds, eventId);
+
+        if (requests.size() != requestIds.size()) {
+            Set<Long> foundRequestIds = requests.stream()
+                    .map(Request::getId)
+                    .collect(Collectors.toSet());
+
+            List<Long> missingIds = requestIds.stream()
+                    .filter(id -> !foundRequestIds.contains(id))
+                    .toList();
+
+            throw new NotFoundException("Requests with ids: " + missingIds + " not found for event id: " + eventId);
+        }
+
+        return requests;
+    }
+
+    private void validateRequestsStatus(List<Request> requests) throws ConflictException {
+        boolean isExistNotPendingRequest = requests.stream()
+                .anyMatch(x -> !x.getStatus().equals(RequestStatus.PENDING));
+        if (isExistNotPendingRequest)
+            throw new ConflictException("There is a request that is not in the pending status");
+    }
+
+    private void validateForCreateRequest(User user, Event event) throws ConflictException {
+
         if (event.getInitiator().getId().equals(user.getId()))
             throw new ConflictException("User with id=" + user.getId() + " is initiator of event with id=" + event.getId());
 
@@ -226,9 +247,5 @@ public class RequestServiceImpl implements RequestService {
         if (!event.getState().equals(States.PUBLISHED))
             throw new ConflictException("Event not published with id=" + event.getId());
 
-        Integer eventParticipantCount = requestRepository.countByEventId(event.getId());
-
-        if (event.getParticipantLimit().equals(eventParticipantCount))
-            throw new ConflictException("Event reached with id=" + event.getId());
     }
 }

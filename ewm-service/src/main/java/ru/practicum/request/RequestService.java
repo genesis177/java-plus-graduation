@@ -19,7 +19,7 @@ public interface RequestService {
     RequestGetDto cancelRequest(long userId, long requestId)
             throws NotFoundException, ConflictException;
 
-    List<RequestGetDto> getRequestsByUserIdAndEventId(Long userId, Long eventId)
+    List<RequestGetDto> getRequestsByEventId(Long userId, Long eventId)
             throws ConflictException, NotFoundException;
 
     RequestsChangeStatusResponseDto RequestsChangeStatusRequestDto(Long userId, Long eventId, RequestsChangeStatusRequestDto dto)

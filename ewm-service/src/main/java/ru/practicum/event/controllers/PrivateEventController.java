@@ -102,21 +102,36 @@ public class PrivateEventController {
         return privateEventService.updateEvent(userId, eventId, dto);
     }
 
+    /**
+     * Получение информации о запросах на участие в событии текущего пользователя
+     *
+     * @param userId  id текущего пользователя
+     * @param eventId id события
+     * @return информация о запросах
+     */
     @GetMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
     public List<RequestGetDto> getRequestsByUserIdAndEventId(
             @PathVariable(name = "userId") long userId,
             @PathVariable(name = "eventId") long eventId
     ) throws ConflictException, NotFoundException {
-        return requestService.getRequestsByUserIdAndEventId(userId, eventId);
+        return requestService.getRequestsByEventId(userId, eventId);
     }
 
+    /**
+     * Изменение статуса (подтверждена, отменена) заявок на участие в событии текущего пользователя
+     *
+     * @param userId  id текущего пользователя
+     * @param eventId id события
+     * @param dto    данные добавляемого события
+     * @return измененные заявки
+     */
     @PatchMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
     public RequestsChangeStatusResponseDto changeRequestsStatus(
             @PathVariable(name = "userId") long userId,
             @PathVariable(name = "eventId") long eventId,
-            @RequestBody RequestsChangeStatusRequestDto dto
+            @RequestBody @Valid RequestsChangeStatusRequestDto dto
     ) throws ConflictException, NotFoundException {
         return requestService.RequestsChangeStatusRequestDto(userId, eventId, dto);
     }

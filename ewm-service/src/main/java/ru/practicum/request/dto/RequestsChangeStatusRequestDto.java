@@ -1,5 +1,7 @@
 package ru.practicum.request.dto;
 
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,6 +16,10 @@ import java.util.List;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RequestsChangeStatusRequestDto {
+
+    @NotEmpty(message = "Список requestIds не может быть пустым")
     List<Long> requestIds;
+
+    @NotNull(message = "Статус не может быть null")
     RequestStatus status;
 }
