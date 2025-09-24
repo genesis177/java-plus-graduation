@@ -22,9 +22,11 @@ public class RequestController {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<RequestGetDto> getRequestsByUserId(
-        @PathVariable(name = "userId") long userId
+        @PathVariable(name = "userId") long userId,
+        @RequestParam(name = "from", defaultValue = "0") int from,
+        @RequestParam(name = "size", defaultValue = "10") int size
     ) throws NotFoundException {
-        return requestService.getRequestsByUserId(userId);
+        return requestService.getRequestsByUserId(userId, from, size);
     }
 
     @PostMapping

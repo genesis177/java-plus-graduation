@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface RequestService {
 
-    List<RequestGetDto> getRequestsByUserId(long userId)
+    List<RequestGetDto> getRequestsByUserId(long userId, int from, int size)
             throws NotFoundException;
 
     RequestGetDto createRequest(long userId, long eventId)
@@ -22,6 +22,6 @@ public interface RequestService {
     List<RequestGetDto> getRequestsByEventId(Long userId, Long eventId)
             throws ConflictException, NotFoundException;
 
-    RequestsChangeStatusResponseDto requestsChangeStatusRequestDto(Long userId, Long eventId, RequestsChangeStatusRequestDto dto)
+    RequestsChangeStatusResponseDto requestsChangeStatus(Long userId, Long eventId, RequestsChangeStatusRequestDto dto)
             throws ConflictException, NotFoundException;
 }

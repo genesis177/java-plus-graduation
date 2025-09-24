@@ -2,7 +2,12 @@ package ru.practicum.request;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
@@ -24,7 +29,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
 public class RequestServiceImpl implements RequestService {
 
     private final UserRepository userRepository;
@@ -32,14 +36,17 @@ public class RequestServiceImpl implements RequestService {
     private final RequestRepository requestRepository;
 
     @Override
-    public List<RequestGetDto> getRequestsByUserId(long userId)
+    @Transactional(readOnly = true)
+    public List<RequestGetDto> getRequestsByUserId(long userId, int from, int size)
             throws NotFoundException {
         log.info("Запрос списка заявок пользователя с id: {}", userId);
+
+        PageRequest pageRequest = PageRequest.of(from, size, Sort.by(Sort.Direction.ASC, "id"));
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
 
-        List<Request> requests = requestRepository.findAllByRequesterId(userId);
+        List<Request> requests = requestRepository.findAllByRequesterId(userId, pageRequest).getContent();
         log.info("Количество найденных заявок: {}", requests.size());
 
         return requests.stream()
@@ -61,30 +68,22 @@ public class RequestServiceImpl implements RequestService {
 
         validateForCreateRequest(user, event);
 
-        boolean isModeration = event.getRequestModeration();
         Integer participantLimit = event.getParticipantLimit();
+        boolean autoConfirmed = participantLimit == 0 || event.getRequestModeration().equals(false);
+
+        int confirmedRequestsCount = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
+        int availableSlots = participantLimit - confirmedRequestsCount;
         Request request;
 
-        if (!isModeration || participantLimit == 0) {
+        if (availableSlots > 0 || participantLimit == 0) {
             request = Request.builder()
                     .created(LocalDateTime.now())
                     .requester(user)
                     .event(event)
-                    .status(RequestStatus.CONFIRMED)
+                    .status(autoConfirmed ? RequestStatus.CONFIRMED : RequestStatus.PENDING)
                     .build();
         } else {
-            int confirmedRequestsCount = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
-            int availableSlots = event.getParticipantLimit() - confirmedRequestsCount;
-
-            if (availableSlots <= 0)
-                throw new ConflictException("Event reached with id=" + eventId);
-
-            request = Request.builder()
-                    .created(LocalDateTime.now())
-                    .requester(user)
-                    .event(event)
-                    .status(RequestStatus.PENDING)
-                    .build();
+            throw new ConflictException("Event reached with id=" + eventId);
         }
 
         Request saveRequest = requestRepository.save(request);
@@ -121,6 +120,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<RequestGetDto> getRequestsByEventId(Long userId, Long eventId)
             throws ConflictException, NotFoundException {
         log.info("Получение запросов на участие в событии id {} пользователем id {}", eventId, userId);
@@ -136,61 +136,22 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    @Transactional
-    public RequestsChangeStatusResponseDto requestsChangeStatusRequestDto(Long userId, Long eventId, RequestsChangeStatusRequestDto dto)
+    public RequestsChangeStatusResponseDto requestsChangeStatus(Long userId, Long eventId, RequestsChangeStatusRequestDto dto)
             throws ConflictException, NotFoundException {
         log.info("Изменение статуса заявок на участие в событии id {} текущего пользователя id {}", eventId, userId);
 
         Event event = baseValidateEvent(userId, eventId);
+
         List<Request> requests = validateAndGetRequests(dto.getRequestIds(), eventId);
-        validateRequestsStatus(requests);
 
-        int confirmedRequestsCount = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
-        int availableSlots = event.getParticipantLimit() - confirmedRequestsCount;
-
-        List<Long> confirmedIds = Collections.emptyList();
-        List<Long> rejectedIds = Collections.emptyList();
-
-        if (dto.getStatus().equals(RequestStatus.CONFIRMED)) {
-
-            if ((availableSlots - requests.size()) < 0)
-                throw new ConflictException("The participant limit has been reached for event id: " + eventId);
-
-            requestRepository.updateStatusByIds(dto.getRequestIds(), RequestStatus.CONFIRMED);
-            confirmedIds = dto.getRequestIds();
-
-            if ((availableSlots - requests.size()) == 0) {
-                List<Request> rejectedRequests = requestRepository.findByEventIdAndStatus(eventId, RequestStatus.PENDING);
-
-                rejectedIds = rejectedRequests.stream()
-                        .map(Request::getId)
-                        .toList();
-
-                requestRepository.updateStatusByIds(rejectedIds, RequestStatus.CONFIRMED);
-
-            }
-        } else if (dto.getStatus().equals(RequestStatus.REJECTED)) {
-            requestRepository.updateStatusByIds(dto.getRequestIds(), RequestStatus.REJECTED);
-            rejectedIds = dto.getRequestIds();
-        }
-
-        List<Request> confirmedRequests = confirmedIds.isEmpty() ?
-                Collections.emptyList() : requestRepository.findAllById(confirmedIds);
-
-        List<Request> rejectedRequests = rejectedIds.isEmpty() ?
-                Collections.emptyList() : requestRepository.findAllById(rejectedIds);
-
-        RequestsChangeStatusResponseDto response = new RequestsChangeStatusResponseDto();
-        response.setConfirmedRequests(confirmedRequests.stream()
-                .map(RequestMapper::toRequestGetDto)
-                .collect(Collectors.toList()));
-
-        response.setRejectedRequests(rejectedRequests.stream()
-                .map(RequestMapper::toRequestGetDto)
-                .collect(Collectors.toList()));
-
-        return response;
+        return switch (dto.getStatus()) {
+            case CONFIRMED -> requestsChangeStatusToConfirmed(event, requests, dto);
+            case REJECTED -> requestsChangeStatusToRejected(requests, dto);
+            default -> throw new ConflictException("Unspecified status {} " + dto.getStatus());
+        };
     }
+
+
 
     private Event baseValidateEvent(Long userId, Long eventId) throws NotFoundException, ConflictException {
         User user = userRepository.findById(userId)
@@ -206,7 +167,7 @@ public class RequestServiceImpl implements RequestService {
         return event;
     }
 
-    private List<Request> validateAndGetRequests(List<Long> requestIds, Long eventId) throws NotFoundException {
+    private List<Request> validateAndGetRequests(List<Long> requestIds, Long eventId) throws NotFoundException, ConflictException {
         List<Request> requests = requestRepository.findByIdInAndEventId(requestIds, eventId);
 
         if (requests.size() != requestIds.size()) {
@@ -221,14 +182,12 @@ public class RequestServiceImpl implements RequestService {
             throw new NotFoundException("Requests with ids: " + missingIds + " not found for event id: " + eventId);
         }
 
-        return requests;
-    }
+        boolean hasPendingStatus = requests.stream()
+                .allMatch(x -> x.getStatus().equals(RequestStatus.PENDING));
+        if (!hasPendingStatus)
+            throw new ConflictException("ids contains requests with not pending status");
 
-    private void validateRequestsStatus(List<Request> requests) throws ConflictException {
-        boolean isExistNotPendingRequest = requests.stream()
-                .anyMatch(x -> !x.getStatus().equals(RequestStatus.PENDING));
-        if (isExistNotPendingRequest)
-            throw new ConflictException("There is a request that is not in the pending status");
+        return requests;
     }
 
     private void validateForCreateRequest(User user, Event event) throws ConflictException {
@@ -241,6 +200,84 @@ public class RequestServiceImpl implements RequestService {
 
         if (!event.getState().equals(States.PUBLISHED))
             throw new ConflictException("Event not published with id=" + event.getId());
+    }
 
+    public void updateRequestStatuses(List<Long> confirmedIds, List<Long> rejectedIds) {
+        if (!confirmedIds.isEmpty()) {
+            requestRepository.updateStatusByIds(confirmedIds, RequestStatus.CONFIRMED);
+        }
+        if (!rejectedIds.isEmpty()) {
+            requestRepository.updateStatusByIds(rejectedIds, RequestStatus.REJECTED);
+        }
+    }
+
+    private RequestsChangeStatusResponseDto requestsChangeStatusToConfirmed(Event event, List<Request> requests, RequestsChangeStatusRequestDto dto) throws ConflictException {
+
+        validateLimit(event, dto);
+
+        List<Request> confirmedRequests = requests
+                .stream()
+                .filter(request -> dto.getRequestIds().contains(request.getId()))
+                .peek(request -> request.setStatus(RequestStatus.CONFIRMED))
+                .toList();
+
+        List<Request> rejectedRequests = requests
+                .stream()
+                .filter(request -> !dto.getRequestIds().contains(request.getId()))
+                .peek(request -> request.setStatus(RequestStatus.REJECTED))
+                .toList();
+
+        List<Long> confirmedRequestIds = confirmedRequests
+                .stream()
+                .map(Request::getId)
+                .toList();
+        List<Long> rejectedRequestIds = rejectedRequests
+                .stream()
+                .map(Request::getId)
+                .toList();
+
+        updateRequestStatuses(confirmedRequestIds, rejectedRequestIds);
+
+        RequestsChangeStatusResponseDto response = new RequestsChangeStatusResponseDto();
+
+        response.setConfirmedRequests(confirmedRequests.stream()
+                .map(RequestMapper::toRequestGetDto)
+                .collect(Collectors.toList()));
+
+        response.setRejectedRequests(rejectedRequests.stream()
+                .map(RequestMapper::toRequestGetDto)
+                .collect(Collectors.toList()));
+
+        return response;
+    }
+
+    private RequestsChangeStatusResponseDto requestsChangeStatusToRejected(List<Request> requests, RequestsChangeStatusRequestDto dto) {
+        List<Request> rejectedRequests = requests
+                .stream()
+                .filter(request -> dto.getRequestIds().contains(request.getId()))
+                .peek(request -> request.setStatus(RequestStatus.REJECTED))
+                .toList();
+
+        List<Long> rejectedRequestIds = rejectedRequests
+                .stream()
+                .map(Request::getId)
+                .toList();
+
+        updateRequestStatuses(Collections.emptyList(), rejectedRequestIds);
+
+        RequestsChangeStatusResponseDto response = new RequestsChangeStatusResponseDto();
+
+        response.setRejectedRequests(rejectedRequests.stream()
+                .map(RequestMapper::toRequestGetDto)
+                .collect(Collectors.toList()));
+
+        return response;
+    }
+
+    private void validateLimit (Event event, RequestsChangeStatusRequestDto dto) throws ConflictException {
+        int confirmedRequestsCount = requestRepository.countByEventIdAndStatus(event.getId(), RequestStatus.CONFIRMED);
+        int availableSlotsCount = event.getParticipantLimit() - confirmedRequestsCount;
+        if (availableSlotsCount < dto.getRequestIds().size())
+            throw new ConflictException("The limit has been reached");
     }
 }
