@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class RequestServiceImpl implements RequestService {
 
     private final UserRepository userRepository;
@@ -33,7 +34,6 @@ public class RequestServiceImpl implements RequestService {
     private final RequestRepository requestRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public List<RequestGetDto> getRequestsByUserId(long userId, int from, int size)
             throws NotFoundException {
         log.info("Запрос списка заявок пользователя с id: {}", userId);
@@ -117,7 +117,6 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<RequestGetDto> getRequestsByEventId(Long userId, Long eventId)
             throws ConflictException, NotFoundException {
         log.info("Получение запросов на участие в событии id {} пользователем id {}", eventId, userId);
@@ -133,6 +132,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
+    @Transactional
     public RequestsChangeStatusResponseDto requestsChangeStatus(Long userId, Long eventId, RequestsChangeStatusRequestDto dto)
             throws ConflictException, NotFoundException {
         log.info("Изменение статуса заявок на участие в событии id {} текущего пользователя id {}", eventId, userId);
@@ -147,8 +147,6 @@ public class RequestServiceImpl implements RequestService {
             default -> throw new ConflictException("Unspecified status {} " + dto.getStatus());
         };
     }
-
-
 
     private Event baseValidateEvent(Long userId, Long eventId) throws NotFoundException, ConflictException {
         User user = userRepository.findById(userId)
