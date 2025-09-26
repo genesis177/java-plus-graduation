@@ -5,6 +5,7 @@ import ru.practicum.compilation.dto.CompilationDto;
 import ru.practicum.compilation.dto.NewCompilationDto;
 import ru.practicum.event.EventMapper;
 
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 @UtilityClass
@@ -26,7 +27,7 @@ public class CompilationMapper {
                         compilation.getEvents().stream()
                                 .map(EventMapper::mapToEventShortDto)
                                 .collect(Collectors.toList()) :
-                        null)
+                        Collections.emptyList())
                 .build();
     }
 }

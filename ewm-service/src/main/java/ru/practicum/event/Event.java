@@ -20,6 +20,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.Formula;
 import ru.practicum.category.Category;
 import ru.practicum.event.enums.States;
 import ru.practicum.location.Location;
@@ -125,4 +126,8 @@ public class Event {
      */
     @Enumerated(EnumType.STRING)
     private States state;
+
+    @Formula("(select count(*) from requests p " +
+            " where p.event_id = id and p.status = 'CONFIRMED')")
+    private Long confirmedRequests;
 }

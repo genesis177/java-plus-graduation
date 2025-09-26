@@ -29,6 +29,7 @@ public class EventMapper {
                 .initiator(UserMapper.mapToUserShortDto(event.getInitiator()))
                 .paid(event.getPaid())
                 .title(event.getTitle())
+                .confirmedRequests(event.getConfirmedRequests())
                 .build();
     }
 
@@ -64,6 +65,7 @@ public class EventMapper {
                 .requestModeration(event.getRequestModeration())
                 .state(event.getState())
                 .title(event.getTitle())
+                .confirmedRequests(event.getConfirmedRequests())
                 .build();
     }
 

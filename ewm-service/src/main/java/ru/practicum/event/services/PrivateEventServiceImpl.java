@@ -4,18 +4,22 @@ import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import ru.practicum.StatsClient;
 import ru.practicum.category.Category;
 import ru.practicum.category.service.CategoryService;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
+import ru.practicum.dto.StatsDto;
 import ru.practicum.event.Event;
 import ru.practicum.event.EventMapper;
 import ru.practicum.event.EventRepository;
@@ -42,6 +46,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     private final UserService userService;
     private final CategoryService categoryService;
     private final LocationService locationService;
+    private final StatsClient statsClient;
 
     private final EventRepository eventRepository;
 
@@ -61,7 +66,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
                 .map(EventMapper::mapToEventShortDto)
                 .toList();
 
-        completeCollection(result);
+        completeCollection(result, searchResult);
         log.info("Полученная коллекция преобразована. Размер коллекции после преобразования {}", result.size());
 
         log.info("Возврат результатов поиска на уровень контроллера");
@@ -102,7 +107,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         EventFullDto result = EventMapper.mapToFullDto(event);
 
-        completeModel(result);
+        completeModel(result, event);
         log.info("Сохраненная модель преобразована. Идентификатор модели после преобразования {}", result.getId());
 
         log.info("Возврат результатов создания пользователя на уровень контроллера");
@@ -127,7 +132,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         }
 
         EventFullDto result = EventMapper.mapToFullDto(event);
-        completeModel(result);
+        completeModel(result, event);
         log.info("Полученная модель преобразована. Идентификатор модели после преобразования {}", result.getId());
 
         log.info("Возврат полной информации о событии на уровень контроллера");
@@ -170,7 +175,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         EventFullDto result = EventMapper.mapToFullDto(event);
 
-        completeModel(result);
+        completeModel(result, event);
         log.info("Измененная модель преобразована. Идентификатор модели после преобразования {}", result.getId());
 
         log.info("Возврат результатов обновления события на уровень контроллера");
@@ -182,18 +187,13 @@ public class PrivateEventServiceImpl implements PrivateEventService {
      *
      * @param events коллекция событий
      */
-    private void completeCollection(Collection<EventShortDto> events) {
+    private void completeCollection(Collection<EventShortDto> eventsShortDto, Collection<Event> events) {
         log.info("Заполнение коллекции событий");
 
-        log.info("Заполнение количества одобренных заявок на участие");
-        for (EventShortDto event : events) {
-            event.setConfirmedRequests(0L);
-        }
-        log.info("Заполнение количества одобренных заявок на участие завершено");
-
         log.info("Заполнение количества просмотров");
-        for (EventShortDto event : events) {
-            event.setViews(0L);
+        Map<Long,Long> views = getAmountOfViews(events.stream().toList());
+        for (EventShortDto event : eventsShortDto) {
+            event.setViews(views.getOrDefault(event.getId(), 0L));
         }
         log.info("Заполнение количества просмотров завершено");
 
@@ -205,15 +205,16 @@ public class PrivateEventServiceImpl implements PrivateEventService {
      *
      * @param event событие
      */
-    private void completeModel(EventFullDto event) {
+    private void completeModel(EventFullDto eventFullDto, Event event) {
         log.info("Заполнение события");
 
         log.info("Заполнение количества одобренных заявок");
-        event.setConfirmedRequests(0L);
+        eventFullDto.setConfirmedRequests(event.getConfirmedRequests());
         log.info("Заполнение количества одобренных заявок завершено");
 
         log.info("Заполнение количества просмотров события");
-        event.setViews(0L);
+        Map<Long, Long> views = getAmountOfViews(List.of(event)) ;
+        eventFullDto.setViews(views.getOrDefault(event.getId(), 0L));
         log.info("Заполнение количества просмотров события завершено");
 
         log.info("Заполнение события завершено");
@@ -250,5 +251,48 @@ public class PrivateEventServiceImpl implements PrivateEventService {
             if (update.getStateAction() == StateActions.SEND_TO_REVIEW) event.setState(States.PENDING);
             if (update.getStateAction() == StateActions.CANCEL_REVIEW) event.setState(States.CANCELED);
         }
+    }
+
+    private Map<Long, Long> getAmountOfViews(List<Event> events) {
+        if (events == null || events.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<String> uris = events.stream()
+                .map(event -> "/events/" + event.getId())
+                .distinct()
+                .collect(Collectors.toList());
+
+        LocalDateTime startTime = events.stream()
+                .map(Event::getCreatedOn)
+                .filter(Objects::nonNull)
+                .min(LocalDateTime::compareTo)
+                .orElse(LocalDateTime.now().minusYears(1));
+        LocalDateTime endTime = LocalDateTime.now();
+
+        Map<Long, Long> viewsMap = new HashMap<>();
+        try {
+            log.info("Получение статистики по времени для URI: {} c {} по {}", uris, startTime, endTime);
+
+            ResponseEntity<List<StatsDto>> responseEntity = statsClient.getStats(startTime, endTime, uris, true);
+            if (responseEntity == null || !responseEntity.getStatusCode().is2xxSuccessful()
+                    || responseEntity.getBody() == null) {
+                log.info("Сервис статистики вернул пустой или не 2хх ответ");
+                return Collections.emptyMap();
+            }
+
+            List<StatsDto> stats = responseEntity.getBody();
+
+            for (StatsDto s : stats) {
+                String uri = s.getUri();
+                Long hits = s.getHits() != null ? s.getHits() : 0L;
+                Long eventId = Long.parseLong(uri.substring("/events/".length()));
+
+                viewsMap.put(eventId, hits);
+            }
+        } catch (Exception e) {
+            log.debug("Ошибка при получении статистики просмотров");
+        }
+        return viewsMap;
     }
 }

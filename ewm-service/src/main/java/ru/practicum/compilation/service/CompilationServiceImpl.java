@@ -2,6 +2,10 @@ package ru.practicum.compilation.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.common.exception.NotFoundException;
@@ -15,7 +19,9 @@ import ru.practicum.event.Event;
 import ru.practicum.event.EventRepository;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -93,5 +99,34 @@ public class CompilationServiceImpl implements CompilationService {
         log.info("Подборка с id {} обновлена", compId);
 
         return CompilationMapper.toCompilationDto(compilation);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CompilationDto getCompilationById(Long compId) throws NotFoundException {
+        Compilation compilation = compilationRepository.findById(compId)
+                .orElseThrow(() -> new NotFoundException("Подборка с id " + compId + " не найдена"));
+        return CompilationMapper.toCompilationDto(compilation);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CompilationDto> getCompilations(Boolean pinned, Integer from, Integer size) throws BadRequestException {
+
+        if(from < 0 || size <= 0){
+            throw new BadRequestException("Неверные параметры пагинации");
+        }
+
+        Pageable pageable = PageRequest.of(from/size, size);
+
+        Page<Compilation> page;
+        if(pinned != null){
+            page = compilationRepository.findAllByPinned(pinned, pageable);
+        }else {
+            page = compilationRepository.findAll(pageable);
+        }
+        return page.getContent().stream()
+                .map(CompilationMapper::toCompilationDto)
+                .collect(Collectors.toList());
     }
 }
