@@ -1,6 +1,7 @@
 package ru.practicum;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -19,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StatsClient {
@@ -43,7 +45,7 @@ public class StatsClient {
                                                    LocalDateTime end,
                                                    List<String> uris,
                                                    Boolean unique) {
-
+        log.info("Получен запрос статистики start: {}, end: {}, uris: {}, unique: {}", start, end, uris, unique);
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(statsServerUrl)
                 .path("/stats")
                 .queryParam("start", start.format(FORMATTER))

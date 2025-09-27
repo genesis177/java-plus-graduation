@@ -47,10 +47,12 @@ public class StatsServiceImpl implements StatsService {
         log.info("Получен запрос на получение статистики с параметрами: start='{}', end='{}', uris={}, unique={}", start, end, uris, unique);
 
         if (start == null) {
+            log.info("Не указано начало диапазона.");
             throw new BadRequestException("Не указано начало диапазона.");
         }
 
         if (end == null) {
+            log.info("Не указан конец диапазона.");
             throw new BadRequestException("Не указан конец диапазона.");
         }
 
@@ -59,25 +61,29 @@ public class StatsServiceImpl implements StatsService {
         try {
             startDateTime = LocalDateTime.parse(start, FORMATTER);
             endDateTime = LocalDateTime.parse(end, FORMATTER);
+            log.info("startTime: {}, endTime: {}", startDateTime, endDateTime);
         } catch (DateTimeParseException e) {
+            log.info("Неверный формат даты");
             throw new BadRequestException("Неверный формат даты. Ожидается yyyy-MM-dd HH:mm:ss");
         }
 
         if (startDateTime.isAfter(endDateTime)) {
+            log.info("Начало диапазона не может превышать конец.");
             throw new BadRequestException("Начало диапазона не может превышать конец.");
         }
 
         boolean isUnique = Boolean.TRUE.equals(unique);
-
+        log.info("isUnique: {}", isUnique);
         try {
             List<ViewStats> viewStats;
             if (isUnique) {
                 log.info("Вызов метода подсчета уникальных ip uris={}, start={}, end={}", uris, startDateTime, endDateTime);
                 viewStats = statsRepository.calculateUniqueStats(uris, startDateTime, endDateTime);
             } else {
+                log.info("Вызов метода подсчета не уникальных ip uris={}, start={}, end={}", uris, startDateTime, endDateTime);
                 viewStats = statsRepository.calculateStats(uris, startDateTime, endDateTime);
             }
-
+            log.info("viewStats: {}", viewStats);
             return (viewStats == null ? List.of() :
                     viewStats.stream()
                             .map(HitMapper::toStatsResponseDto)

@@ -105,7 +105,7 @@ public class PublicEventService {
                 .distinct()
                 .collect(Collectors.toList());
 
-        LocalDateTime startTime = LocalDateTime.now().minusYears(1);
+        LocalDateTime startTime = LocalDateTime.now().minusDays(5);
         LocalDateTime endTime = LocalDateTime.now().plusSeconds(60);
 
         log.info("getAmountOfViews -> uris={}, start={}, end={}", uris, startTime, endTime);
