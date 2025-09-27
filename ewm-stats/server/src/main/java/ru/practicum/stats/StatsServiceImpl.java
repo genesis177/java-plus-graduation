@@ -78,9 +78,7 @@ public class StatsServiceImpl implements StatsService {
                 viewStats = statsRepository.calculateStats(uris, startDateTime, endDateTime);
             }
 
-            int count = viewStats == null ? 0 : viewStats.size();
-
-            return (viewStats == null ? List.<StatsDto>of() :
+            return (viewStats == null ? List.of() :
                     viewStats.stream()
                             .map(HitMapper::toStatsResponseDto)
                             .collect(Collectors.toList()));
