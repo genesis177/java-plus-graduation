@@ -110,8 +110,8 @@ public class PublicEventService {
                 .map(Event::getCreatedOn)
                 .filter(Objects::nonNull)
                 .min(LocalDateTime::compareTo)
-                .orElse(LocalDateTime.now(ZoneId.of("UTC")).minusYears(1));
-        LocalDateTime endTime = LocalDateTime.now(ZoneId.of("UTC")).plusSeconds(60);
+                .orElse(LocalDateTime.now(ZoneId.of("UTC-8")).minusYears(1));
+        LocalDateTime endTime = LocalDateTime.now(ZoneId.of("UTC-8")).plusSeconds(60);
 
         log.info("getAmountOfViews -> uris={}, start={}, end={}", uris, startTime, endTime);
 
@@ -120,10 +120,14 @@ public class PublicEventService {
             log.info("Получение статистики по времени для URI: {} c {} по {}", uris, startTime, endTime);
 
             ResponseEntity<List<StatsDto>> responseEntity = statsClient.getStats(startTime, endTime, uris, true);
-            if (responseEntity == null || !responseEntity.getStatusCode().is2xxSuccessful()
-                    || responseEntity.getBody() == null) {
-                log.info("Сервис статистики вернул пустой или не 2хх ответ");
-                return Collections.emptyMap();
+            if (responseEntity == null){
+                log.info("responceEntity == null");
+            }
+            if(!responseEntity.getStatusCode().is2xxSuccessful()){
+                log.info("Сервис статистики вернул не 2хх ответ");
+            }
+            if(responseEntity.getBody() == null){
+                log.info("тело responseEntity == null");
             }
 
             List<StatsDto> stats = responseEntity.getBody();
