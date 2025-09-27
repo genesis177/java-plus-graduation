@@ -84,9 +84,7 @@ public class PublicEventService {
                     .timestamp(LocalDateTime.now())
                     .build();
 
-            log.debug("Sending postHit: {}", hit);
-            ResponseEntity<Object> postRes = statsClient.postHit(hit);
-            log.debug("postHit response: status={}, bodyPresent={}", postRes == null ? "null" : postRes.getStatusCode(), postRes != null && postRes.getBody() != null);
+            statsClient.postHit(hit);
         } catch (Exception e) {
             log.error("Не удалось отправить запрос о сохранении на сервер статистики", e);
         }
