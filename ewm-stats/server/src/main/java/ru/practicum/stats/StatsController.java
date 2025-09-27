@@ -2,6 +2,8 @@ package ru.practicum.stats;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.dto.HitDto;
@@ -9,6 +11,7 @@ import ru.practicum.dto.StatsDto;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping
@@ -30,7 +33,7 @@ public class StatsController {
             @RequestParam String end,
             @RequestParam(required = false) List<String> uris,
             @RequestParam(required = false, defaultValue = "false") Boolean unique
-    ) {
+    ) throws BadRequestException {
         return statsService.getStats(start, end, uris, unique);
     }
 }

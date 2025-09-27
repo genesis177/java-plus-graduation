@@ -77,14 +77,18 @@ public class PublicEventService {
         }
 
         try {
-            statsClient.postHit(HitDto.builder()
+            HitDto hit = HitDto.builder()
                     .app("main-service")
-                    .uri(request.getRequestURI().toString())
+                    .uri(request.getRequestURI())
                     .ip(request.getRemoteAddr())
                     .timestamp(LocalDateTime.now())
-                    .build());
+                    .build();
+
+            log.debug("Sending postHit: {}", hit);
+            ResponseEntity<Object> postRes = statsClient.postHit(hit);
+            log.debug("postHit response: status={}, bodyPresent={}", postRes == null ? "null" : postRes.getStatusCode(), postRes != null && postRes.getBody() != null);
         } catch (Exception e) {
-            log.info("Не удалось отправить запрос о сохранении на сервер статистики" + e.getMessage());
+            log.error("Не удалось отправить запрос о сохранении на сервер статистики", e);
         }
         EventFullDto eventFullDto = EventMapper.mapToFullDto(event);
         Map<Long, Long> views = getAmountOfViews(List.of(event));
@@ -108,7 +112,9 @@ public class PublicEventService {
                 .filter(Objects::nonNull)
                 .min(LocalDateTime::compareTo)
                 .orElse(LocalDateTime.now().minusYears(1));
-        LocalDateTime endTime = LocalDateTime.now();
+        LocalDateTime endTime = LocalDateTime.now().plusSeconds(5);
+
+        log.info("getAmountOfViews -> uris={}, start={}, end={}", uris, startTime, endTime);
 
         Map<Long, Long> viewsMap = new HashMap<>();
         try {
@@ -122,7 +128,7 @@ public class PublicEventService {
             }
 
             List<StatsDto> stats = responseEntity.getBody();
-
+            log.info("Stats body: {}", stats);
             for (StatsDto s : stats) {
                 String uri = s.getUri();
                 Long hits = s.getHits() != null ? s.getHits() : 0L;
@@ -131,7 +137,7 @@ public class PublicEventService {
                 viewsMap.put(eventId, hits);
             }
         } catch (Exception e) {
-            log.debug("Ошибка при получении статистики просмотров");
+            log.info("Ошибка при получении статистики просмотров");
         }
         return viewsMap;
     }

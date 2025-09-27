@@ -1,5 +1,6 @@
 package ru.practicum.stats;
 
+import org.apache.coyote.BadRequestException;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatsDto;
 
@@ -14,5 +15,5 @@ public interface StatsService {
             String end,
             List<String> uris,
             Boolean unique
-    );
+    ) throws BadRequestException;
 }
