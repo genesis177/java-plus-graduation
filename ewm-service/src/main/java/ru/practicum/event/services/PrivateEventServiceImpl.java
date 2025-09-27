@@ -191,7 +191,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         log.info("Заполнение коллекции событий");
 
         log.info("Заполнение количества просмотров");
-        Map<Long,Long> views = getAmountOfViews(events.stream().toList());
+        Map<Long, Long> views = getAmountOfViews(events.stream().toList());
         for (EventShortDto event : eventsShortDto) {
             event.setViews(views.getOrDefault(event.getId(), 0L));
         }
@@ -213,7 +213,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         log.info("Заполнение количества одобренных заявок завершено");
 
         log.info("Заполнение количества просмотров события");
-        Map<Long, Long> views = getAmountOfViews(List.of(event)) ;
+        Map<Long, Long> views = getAmountOfViews(List.of(event));
         eventFullDto.setViews(views.getOrDefault(event.getId(), 0L));
         log.info("Заполнение количества просмотров события завершено");
 

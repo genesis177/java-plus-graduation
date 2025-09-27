@@ -113,16 +113,16 @@ public class CompilationServiceImpl implements CompilationService {
     @Transactional(readOnly = true)
     public List<CompilationDto> getCompilations(Boolean pinned, Integer from, Integer size) throws BadRequestException {
 
-        if(from < 0 || size <= 0){
+        if (from < 0 || size <= 0) {
             throw new BadRequestException("Неверные параметры пагинации");
         }
 
-        Pageable pageable = PageRequest.of(from/size, size);
+        Pageable pageable = PageRequest.of(from / size, size);
 
         Page<Compilation> page;
-        if(pinned != null){
+        if (pinned != null) {
             page = compilationRepository.findAllByPinned(pinned, pageable);
-        }else {
+        } else {
             page = compilationRepository.findAll(pageable);
         }
         return page.getContent().stream()
