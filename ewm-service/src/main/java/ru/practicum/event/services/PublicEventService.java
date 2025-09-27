@@ -20,6 +20,7 @@ import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.enums.States;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ public class PublicEventService {
 
     private final EventRepository eventRepository;
     private final StatsClient statsClient;
+    ZoneId UTC = ZoneId.of("UTC");
 
     @Transactional(readOnly = true)
     public List<EventShortDto> getEventsWithFilters(String text, List<Long> categories, Boolean paid,
@@ -109,8 +111,8 @@ public class PublicEventService {
                 .map(Event::getCreatedOn)
                 .filter(Objects::nonNull)
                 .min(LocalDateTime::compareTo)
-                .orElse(LocalDateTime.now().minusYears(1));
-        LocalDateTime endTime = LocalDateTime.now().plusSeconds(5);
+                .orElse(LocalDateTime.now(UTC).minusYears(1));
+        LocalDateTime endTime = LocalDateTime.now(UTC).plusSeconds(60);
 
         log.info("getAmountOfViews -> uris={}, start={}, end={}", uris, startTime, endTime);
 
