@@ -31,7 +31,6 @@ public class PublicEventService {
 
     private final EventRepository eventRepository;
     private final StatsClient statsClient;
-    ZoneId UTC = ZoneId.of("UTC");
 
     @Transactional(readOnly = true)
     public List<EventShortDto> getEventsWithFilters(String text, List<Long> categories, Boolean paid,
@@ -111,8 +110,8 @@ public class PublicEventService {
                 .map(Event::getCreatedOn)
                 .filter(Objects::nonNull)
                 .min(LocalDateTime::compareTo)
-                .orElse(LocalDateTime.now(UTC).minusYears(1));
-        LocalDateTime endTime = LocalDateTime.now(UTC).plusSeconds(60);
+                .orElse(LocalDateTime.now(ZoneId.of("UTC")).minusYears(1));
+        LocalDateTime endTime = LocalDateTime.now(ZoneId.of("UTC")).plusSeconds(60);
 
         log.info("getAmountOfViews -> uris={}, start={}, end={}", uris, startTime, endTime);
 
