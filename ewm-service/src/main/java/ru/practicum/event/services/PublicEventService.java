@@ -120,13 +120,13 @@ public class PublicEventService {
             log.info("Получение статистики по времени для URI: {} c {} по {}", uris, startTime, endTime);
 
             ResponseEntity<List<StatsDto>> responseEntity = statsClient.getStats(startTime, endTime, uris, true);
-            if (responseEntity == null){
+            if (responseEntity == null) {
                 log.info("responceEntity == null");
             }
-            if(!responseEntity.getStatusCode().is2xxSuccessful()){
+            if (!responseEntity.getStatusCode().is2xxSuccessful()) {
                 log.info("Сервис статистики вернул не 2хх ответ");
             }
-            if(responseEntity.getBody() == null){
+            if (responseEntity.getBody() == null) {
                 log.info("тело responseEntity == null");
             }
 
