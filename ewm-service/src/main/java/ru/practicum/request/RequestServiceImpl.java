@@ -1,5 +1,7 @@
 package ru.practicum.request;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -18,7 +20,6 @@ import ru.practicum.user.User;
 import ru.practicum.user.UserRepository;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,6 +29,9 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional(readOnly = true)
 public class RequestServiceImpl implements RequestService {
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
@@ -197,15 +201,6 @@ public class RequestServiceImpl implements RequestService {
             throw new ConflictException("Event not published with id=" + event.getId());
     }
 
-    public void updateRequestStatuses(List<Long> confirmedIds, List<Long> rejectedIds) {
-        if (!confirmedIds.isEmpty()) {
-            requestRepository.updateStatusByIds(confirmedIds, RequestStatus.CONFIRMED);
-        }
-        if (!rejectedIds.isEmpty()) {
-            requestRepository.updateStatusByIds(rejectedIds, RequestStatus.REJECTED);
-        }
-    }
-
     private RequestsChangeStatusResponseDto requestsChangeStatusToConfirmed(Event event, List<Request> requests, RequestsChangeStatusRequestDto dto) throws ConflictException {
 
         validateLimit(event, dto);
@@ -222,16 +217,7 @@ public class RequestServiceImpl implements RequestService {
                 .peek(request -> request.setStatus(RequestStatus.REJECTED))
                 .toList();
 
-        List<Long> confirmedRequestIds = confirmedRequests
-                .stream()
-                .map(Request::getId)
-                .toList();
-        List<Long> rejectedRequestIds = rejectedRequests
-                .stream()
-                .map(Request::getId)
-                .toList();
-
-        updateRequestStatuses(confirmedRequestIds, rejectedRequestIds);
+        entityManager.flush();
 
         RequestsChangeStatusResponseDto response = new RequestsChangeStatusResponseDto();
 
@@ -253,12 +239,7 @@ public class RequestServiceImpl implements RequestService {
                 .peek(request -> request.setStatus(RequestStatus.REJECTED))
                 .toList();
 
-        List<Long> rejectedRequestIds = rejectedRequests
-                .stream()
-                .map(Request::getId)
-                .toList();
-
-        updateRequestStatuses(Collections.emptyList(), rejectedRequestIds);
+        entityManager.flush();
 
         RequestsChangeStatusResponseDto response = new RequestsChangeStatusResponseDto();
 
