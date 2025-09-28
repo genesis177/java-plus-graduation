@@ -16,7 +16,6 @@ import ru.practicum.dto.StatsDto;
 
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +25,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class StatsClient {
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC);
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     protected final RestTemplate rest;
 
@@ -47,10 +46,14 @@ public class StatsClient {
                                                    List<String> uris,
                                                    Boolean unique) {
         log.info("Получен запрос статистики start: {}, end: {}, uris: {}, unique: {}", start, end, uris, unique);
+
+        String startStr = start.format(FORMATTER);
+        String endStr = end.format(FORMATTER);
+
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(statsServerUrl)
                 .path("/stats")
-                .queryParam("start", start.format(FORMATTER))
-                .queryParam("end", end.format(FORMATTER))
+                .queryParam("start", startStr)
+                .queryParam("end", endStr)
                 .queryParam("unique", unique);
 
         if (uris != null) {
@@ -59,10 +62,19 @@ public class StatsClient {
             }
         }
 
-        URI uri = builder.encode().build().toUri();
-        return makeAndSendRequest(HttpMethod.GET, uri, null,
-                null, new ParameterizedTypeReference<>() {
-                });
+        String urlString = builder.encode().toUriString();
+
+        try {
+            URI uri = URI.create(urlString);
+            log.info("StatsClient GET URL (toString): {}", uri.toString());
+            log.info("StatsClient GET URL (toASCIIString): {}", uri.toASCIIString());
+        } catch (Exception ex) {
+            log.warn("Can't create URI for logging: {}", ex.getMessage());
+            log.info("StatsClient GET URL raw: {}", urlString);
+        }
+
+        URI uri = URI.create(urlString);
+        return makeAndSendRequest(HttpMethod.GET, uri, null, null, new ParameterizedTypeReference<>() {});
     }
 
     private <T> ResponseEntity<T> makeAndSendRequest(HttpMethod method, URI uri,

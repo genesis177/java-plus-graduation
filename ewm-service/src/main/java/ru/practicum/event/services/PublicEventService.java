@@ -20,7 +20,6 @@ import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.enums.States;
 
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,7 +49,7 @@ public class PublicEventService {
                     .app("main-service")
                     .uri(request.getRequestURI())
                     .ip(request.getRemoteAddr())
-                    .timestamp(LocalDateTime.now(ZoneOffset.UTC))
+                    .timestamp(LocalDateTime.now())
                     .build());
         } catch (Exception e) {
             log.info("Не удалось отправить запрос о сохранении статистики " + e.getMessage());
@@ -82,7 +81,7 @@ public class PublicEventService {
                     .app("main-service")
                     .uri(request.getRequestURI())
                     .ip(request.getRemoteAddr())
-                    .timestamp(LocalDateTime.now(ZoneOffset.UTC))
+                    .timestamp(LocalDateTime.now())
                     .build();
 
             statsClient.postHit(hit);
@@ -106,8 +105,8 @@ public class PublicEventService {
                 .distinct()
                 .collect(Collectors.toList());
 
-        LocalDateTime startTime = LocalDateTime.now(ZoneOffset.UTC).minusDays(5);
-        LocalDateTime endTime = LocalDateTime.now(ZoneOffset.UTC).plusSeconds(60);
+        LocalDateTime startTime = LocalDateTime.now().minusDays(5);
+        LocalDateTime endTime = LocalDateTime.now().plusSeconds(60);
 
         log.info("getAmountOfViews -> uris={}, start={}, end={}", uris, startTime, endTime);
 
