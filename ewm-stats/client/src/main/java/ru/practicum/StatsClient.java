@@ -24,7 +24,7 @@ public class StatsClient {
 
     protected final RestTemplate rest;
 
-    @Value("${stats-server.url}")
+    @Value("${stats-server.url:${STATS_SERVER_URL:http://stats-server:9090}}")
     private String statsServerUrl;
 
     public ResponseEntity<HitDto> postHit(HitDto endpointHitDto) {

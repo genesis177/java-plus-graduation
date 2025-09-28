@@ -41,7 +41,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/ewm-db
       - SPRING_DATASOURCE_USERNAME=ewm-db
       - SPRING_DATASOURCE_PASSWORD=ewm-db
-      - TZ=UTC
+      - STATS_SERVER_URL=http://stats-server:9090
       - JAVA_TOOL_OPTIONS=-Duser.timezone=UTC
     healthcheck:
       test: "curl --fail --silent localhost:8080/actuator/health | grep UP || exit 1"
