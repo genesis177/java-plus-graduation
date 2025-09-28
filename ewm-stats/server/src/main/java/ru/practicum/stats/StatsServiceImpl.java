@@ -2,16 +2,14 @@ package ru.practicum.stats;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatsDto;
-import ru.practicum.common.exception.ErrorException;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -24,46 +22,48 @@ public class StatsServiceImpl implements StatsService {
     @Override
     @Transactional
     public HitDto createHit(HitDto requestDto) {
-        Hit hit = HitMapper.toHit(requestDto);
-        Hit savedHit = statsRepository.save(hit);
-
+        log.debug("Сохраняем запрос hit: app={}, uri={}, ip={}, timestamp={}",
+                requestDto.getApp(), requestDto.getUri(),
+                requestDto.getIp(), requestDto.getTimestamp());
+        Hit savedHit = statsRepository.save(HitMapper.toHit(requestDto));
+        log.debug("Hit успешно сохранен с ID: {}", savedHit.getId());
         return HitMapper.toHitDto(savedHit);
     }
 
     @Override
     public List<StatsDto> getStats(
-            String start,
-            String end,
+            LocalDateTime start,
+            LocalDateTime end,
             List<String> uris,
             Boolean unique
-    ) {
+    ) throws BadRequestException {
+        log.info("Получен запрос на получение статистики с параметрами: start='{}', end='{}', uris={}, unique={}", start, end, uris, unique);
 
         if (start == null) {
-            throw new ErrorException("Не указано начало диапазона.");
+            log.info("Не указано начало диапазона.");
+            throw new BadRequestException("Не указано начало диапазона.");
         }
 
         if (end == null) {
-            throw new ErrorException("Не указан конец диапазона.");
+            log.info("Не указан конец диапазона.");
+            throw new BadRequestException("Не указан конец диапазона.");
         }
 
-        LocalDateTime startDateTime = LocalDateTime.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        LocalDateTime endDateTime = LocalDateTime.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-
-        if (startDateTime.isAfter(endDateTime)) {
-            throw new ErrorException("Начало диапазона не может превышать конец.");
+        if (start.isAfter(end)) {
+            log.warn("Ошибка в датах: дата начала {} после даты окончания {}", start, end);
+            throw new BadRequestException("Дата начала не должна быть позже даты окончания");
         }
 
-        boolean isUnique = Boolean.TRUE.equals(unique);
-        List<ViewStats> viewStats;
-
-        if (isUnique) {
-            viewStats = statsRepository.calculateUniqueStats(uris, startDateTime, endDateTime);
+        List<StatsDto> result;
+        if (unique) {
+            log.debug("Запросы статистики для уникальных uri");
+            result = statsRepository.calculateUniqueStats(uris, start, end);
         } else {
-            viewStats = statsRepository.calculateStats(uris, startDateTime, endDateTime);
+            log.debug("Запросы статистики для неуникальных uri");
+            result = statsRepository.calculateStats(uris, start, end);
         }
 
-        return viewStats.stream()
-                .map(HitMapper::toStatsResponseDto)
-                .collect(Collectors.toList());
+        log.debug("Получен результат: {}", result);
+        return result;
     }
 }
