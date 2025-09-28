@@ -3,7 +3,6 @@ package ru.practicum.stats;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import ru.practicum.dto.HitDto;
-import ru.practicum.dto.StatsDto;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class HitMapper {
@@ -25,13 +24,5 @@ public final class HitMapper {
         dto.setIp(hit.getIp());
         dto.setTimestamp(hit.getTimestamp());
         return dto;
-    }
-
-    public static StatsDto toStatsResponseDto(ViewStats viewStats) {
-        StatsDto responseDto = new StatsDto();
-        responseDto.setApp(viewStats.getApp());
-        responseDto.setUri(viewStats.getUri());
-        responseDto.setHits(viewStats.getHits());
-        return responseDto;
     }
 }

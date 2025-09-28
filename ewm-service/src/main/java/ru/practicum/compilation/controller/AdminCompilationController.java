@@ -32,7 +32,7 @@ public class AdminCompilationController {
     @PatchMapping("/{compId}")
     @ResponseStatus(HttpStatus.OK) // Код 200
     public CompilationDto updateCompilation(@PathVariable Long compId,
-                                            @RequestBody UpdateCompilationDto dto) throws NotFoundException {
+                                            @RequestBody @Valid UpdateCompilationDto dto) throws NotFoundException {
         return compilationService.updateCompilation(compId, dto);
     }
 }

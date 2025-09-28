@@ -1,0 +1,134 @@
+package ru.practicum.event.services;
+
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.StatsClient;
+import ru.practicum.common.exception.NotFoundException;
+import ru.practicum.dto.HitDto;
+import ru.practicum.dto.StatsDto;
+import ru.practicum.event.Event;
+import ru.practicum.event.EventMapper;
+import ru.practicum.event.EventRepository;
+import ru.practicum.event.dto.EventFullDto;
+import ru.practicum.event.dto.EventShortDto;
+import ru.practicum.event.enums.States;
+
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class PublicEventService {
+
+    private final EventRepository eventRepository;
+    private final StatsClient statsClient;
+
+    @Transactional(readOnly = true)
+    public List<EventShortDto> getEventsWithFilters(String text, List<Long> categories, Boolean paid,
+                                                    LocalDateTime rangeStart, LocalDateTime rangeEnd,
+                                                    Boolean onlyAvailable, String sort, Integer from,
+                                                    Integer size, HttpServletRequest request) throws BadRequestException {
+        log.info("Получен запрос от публичного юзера на получение событий с фильтрами");
+        if ((rangeStart != null) && (rangeEnd != null) && (rangeStart.isAfter(rangeEnd))) {
+            throw new BadRequestException("Время начала не может быть позже окончания");
+        }
+
+        List<Event> events = eventRepository.findAllByFiltersPublic(text, categories, paid, rangeStart, rangeEnd,
+                onlyAvailable, PageRequest.of(from, size));
+
+        try {
+            statsClient.postHit(HitDto.builder()
+                    .app("main-service")
+                    .uri(request.getRequestURI())
+                    .ip(request.getRemoteAddr())
+                    .timestamp(LocalDateTime.now())
+                    .build());
+        } catch (Exception e) {
+            log.info("Не удалось отправить запрос о сохранении статистики " + e.getMessage());
+        }
+
+        Map<Long, Long> views = getAmountOfViews(events);
+
+        return events.stream()
+                .map(event -> {
+                    EventShortDto dto = EventMapper.mapToEventShortDto(event);
+                    dto.setViews(views.getOrDefault(event.getId(), 0L));
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public EventFullDto getEventById(Long eventId, HttpServletRequest request) throws NotFoundException, BadRequestException {
+        log.info("Получен запрос от публичного юзера на получение полной информации о событии с id {}", eventId);
+
+        Event event = eventRepository.findById(eventId).orElseThrow(
+                () -> new NotFoundException("Событие с id " + eventId + " не найдено"));
+
+        if (event.getState() != States.PUBLISHED) {
+            throw new NotFoundException("Событие с id " + eventId + " недоступно, так как не опубликовано");
+        }
+
+        try {
+            HitDto hit = HitDto.builder()
+                    .app("main-service")
+                    .uri(request.getRequestURI())
+                    .ip(request.getRemoteAddr())
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            statsClient.postHit(hit);
+        } catch (Exception e) {
+            log.error("Не удалось отправить запрос о сохранении на сервер статистики", e);
+        }
+        EventFullDto eventFullDto = EventMapper.mapToFullDto(event);
+        Map<Long, Long> views = getAmountOfViews(List.of(event));
+        eventFullDto.setViews(views.getOrDefault(event.getId(), 0L));
+
+        return eventFullDto;
+    }
+
+    private Map<Long, Long> getAmountOfViews(List<Event> events) {
+        if (events == null || events.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<String> uris = events.stream()
+                .map(event -> "/events/" + event.getId())
+                .distinct()
+                .collect(Collectors.toList());
+
+        LocalDateTime startTime = LocalDateTime.now().minusDays(5);
+        LocalDateTime endTime = LocalDateTime.now().plusSeconds(60);
+
+        log.info("getAmountOfViews -> uris={}, start={}, end={}", uris, startTime, endTime);
+
+        Map<Long, Long> viewsMap = new HashMap<>();
+        try {
+            log.info("Получение статистики по времени для URI: {} c {} по {}", uris, startTime, endTime);
+
+            List<StatsDto> stats = statsClient.getStats(startTime, endTime, uris, true);
+            if (stats == null || stats.isEmpty()) {
+                log.info("Получен пустой список от сервиса статистики");
+                return Collections.emptyMap();
+            }
+
+            for (StatsDto s : stats) {
+                String uri = s.getUri();
+                Long hits = s.getHits() != null ? s.getHits() : 0L;
+                Long eventId = Long.parseLong(uri.substring("/events/".length()));
+
+                viewsMap.put(eventId, hits);
+            }
+        } catch (Exception e) {
+            log.info("Ошибка при получении статистики просмотров");
+        }
+        return viewsMap;
+    }
+}
