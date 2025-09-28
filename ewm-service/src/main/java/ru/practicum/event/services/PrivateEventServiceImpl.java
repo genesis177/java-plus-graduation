@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.practicum.StatsClient;
 import ru.practicum.category.Category;
@@ -274,14 +273,11 @@ public class PrivateEventServiceImpl implements PrivateEventService {
         try {
             log.info("Получение статистики по времени для URI: {} c {} по {}", uris, startTime, endTime);
 
-            ResponseEntity<List<StatsDto>> responseEntity = statsClient.getStats(startTime, endTime, uris, true);
-            if (responseEntity == null || !responseEntity.getStatusCode().is2xxSuccessful()
-                    || responseEntity.getBody() == null) {
-                log.info("Сервис статистики вернул пустой или не 2хх ответ");
+            List<StatsDto> stats = statsClient.getStats(startTime, endTime, uris, true);
+            if (stats == null || stats.isEmpty()) {
+                log.info("Сервис статистики вернул пустой список");
                 return Collections.emptyMap();
             }
-
-            List<StatsDto> stats = responseEntity.getBody();
 
             for (StatsDto s : stats) {
                 String uri = s.getUri();

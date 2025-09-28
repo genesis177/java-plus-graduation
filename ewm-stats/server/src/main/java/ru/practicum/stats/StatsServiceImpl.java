@@ -7,13 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatsDto;
-import ru.practicum.common.exception.ErrorException;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -22,25 +18,22 @@ import java.util.stream.Collectors;
 public class StatsServiceImpl implements StatsService {
 
     private final StatsRepository statsRepository;
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
     @Transactional
     public HitDto createHit(HitDto requestDto) {
-        log.info("Поступил запрос на сохранение hit");
-        Hit hit = HitMapper.toHit(requestDto);
-        Hit savedHit = statsRepository.save(hit);
-
-        log.info("Сохраненный hit: id={}, app={}, uri={}, ip={}, timestamp={}",
-                savedHit.getId(), savedHit.getApp(), savedHit.getUri(), savedHit.getIp(), savedHit.getTimestamp());
-
+        log.debug("Сохраняем запрос hit: app={}, uri={}, ip={}, timestamp={}",
+                requestDto.getApp(), requestDto.getUri(),
+                requestDto.getIp(), requestDto.getTimestamp());
+        Hit savedHit = statsRepository.save(HitMapper.toHit(requestDto));
+        log.debug("Hit успешно сохранен с ID: {}", savedHit.getId());
         return HitMapper.toHitDto(savedHit);
     }
 
     @Override
     public List<StatsDto> getStats(
-            String start,
-            String end,
+            LocalDateTime start,
+            LocalDateTime end,
             List<String> uris,
             Boolean unique
     ) throws BadRequestException {
@@ -56,41 +49,21 @@ public class StatsServiceImpl implements StatsService {
             throw new BadRequestException("Не указан конец диапазона.");
         }
 
-        LocalDateTime startDateTime;
-        LocalDateTime endDateTime;
-        try {
-            startDateTime = LocalDateTime.parse(start, FORMATTER);
-            endDateTime = LocalDateTime.parse(end, FORMATTER);
-            log.info("startTime: {}, endTime: {}", startDateTime, endDateTime);
-        } catch (DateTimeParseException e) {
-            log.info("Неверный формат даты");
-            throw new BadRequestException("Неверный формат даты. Ожидается yyyy-MM-dd HH:mm:ss");
+        if (start.isAfter(end)) {
+            log.warn("Ошибка в датах: дата начала {} после даты окончания {}", start, end);
+            throw new BadRequestException("Дата начала не должна быть позже даты окончания");
         }
 
-        if (startDateTime.isAfter(endDateTime)) {
-            log.info("Начало диапазона не может превышать конец.");
-            throw new BadRequestException("Начало диапазона не может превышать конец.");
+        List<StatsDto> result;
+        if (unique) {
+            log.debug("Запросы статистики для уникальных uri");
+            result = statsRepository.calculateUniqueStats(uris, start, end);
+        } else {
+            log.debug("Запросы статистики для неуникальных uri");
+            result = statsRepository.calculateStats(uris, start, end);
         }
 
-        boolean isUnique = Boolean.TRUE.equals(unique);
-        log.info("isUnique: {}", isUnique);
-        try {
-            List<ViewStats> viewStats;
-            if (isUnique) {
-                log.info("Вызов метода подсчета уникальных ip uris={}, start={}, end={}", uris, startDateTime, endDateTime);
-                viewStats = statsRepository.calculateUniqueStats(uris, startDateTime, endDateTime);
-            } else {
-                log.info("Вызов метода подсчета не уникальных ip uris={}, start={}, end={}", uris, startDateTime, endDateTime);
-                viewStats = statsRepository.calculateStats(uris, startDateTime, endDateTime);
-            }
-            log.info("viewStats: {}", viewStats);
-            return (viewStats == null ? List.of() :
-                    viewStats.stream()
-                            .map(HitMapper::toStatsResponseDto)
-                            .collect(Collectors.toList()));
-        } catch (Exception e) {
-            log.info("Неожиданная ошибка. Параметры: uris={}, start={}, end={}", uris, startDateTime, endDateTime, e);
-            throw new ErrorException("Ошибка при получении статистики");
-        }
+        log.debug("Получен результат: {}", result);
+        return result;
     }
 }

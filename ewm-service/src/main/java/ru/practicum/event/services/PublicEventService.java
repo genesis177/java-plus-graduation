@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.StatsClient;
@@ -114,15 +113,12 @@ public class PublicEventService {
         try {
             log.info("Получение статистики по времени для URI: {} c {} по {}", uris, startTime, endTime);
 
-            ResponseEntity<List<StatsDto>> responseEntity = statsClient.getStats(startTime, endTime, uris, true);
-            if (responseEntity == null || !responseEntity.getStatusCode().is2xxSuccessful()
-                    || responseEntity.getBody() == null) {
-                log.info("Сервис статистики вернул пустой или не 2хх ответ");
+            List<StatsDto> stats = statsClient.getStats(startTime, endTime, uris, true);
+            if (stats == null || stats.isEmpty()) {
+                log.info("Получен пустой список от сервиса статистики");
                 return Collections.emptyMap();
             }
 
-            List<StatsDto> stats = responseEntity.getBody();
-            log.info("Stats body: {}", stats);
             for (StatsDto s : stats) {
                 String uri = s.getUri();
                 Long hits = s.getHits() != null ? s.getHits() : 0L;

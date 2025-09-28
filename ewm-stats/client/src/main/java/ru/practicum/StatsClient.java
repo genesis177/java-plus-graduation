@@ -3,22 +3,17 @@ package ru.practicum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.dto.HitDto;
 import ru.practicum.dto.StatsDto;
 
 
-import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -32,69 +27,33 @@ public class StatsClient {
     @Value("${stats-server.url}")
     private String statsServerUrl;
 
-    public ResponseEntity<Object> postHit(HitDto hitDto) {
-        URI uri = UriComponentsBuilder.fromHttpUrl(statsServerUrl)
-                .path("/hit")
-                .build()
-                .toUri();
-        return makeAndSendRequest(HttpMethod.POST, uri, null, hitDto, new ParameterizedTypeReference<Object>() {
-        });
+    public ResponseEntity<HitDto> postHit(HitDto endpointHitDto) {
+        String url = statsServerUrl + "/hit";
+        return rest.postForEntity(url, endpointHitDto, HitDto.class);
     }
 
-    public ResponseEntity<List<StatsDto>> getStats(LocalDateTime start,
-                                                   LocalDateTime end,
-                                                   List<String> uris,
-                                                   Boolean unique) {
-        log.info("Получен запрос статистики start: {}, end: {}, uris: {}, unique: {}", start, end, uris, unique);
-
+    public List<StatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
         String startStr = start.format(FORMATTER);
         String endStr = end.format(FORMATTER);
 
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(statsServerUrl)
-                .path("/stats")
-                .queryParam("start", startStr)
-                .queryParam("end", endStr)
-                .queryParam("unique", unique);
+        StringBuilder urlBuilder = new StringBuilder(statsServerUrl)
+                .append("/stats?start=").append(startStr)
+                .append("&end=").append(endStr)
+                .append("&unique=").append(unique);
 
-        if (uris != null) {
-            for (String u : uris) {
-                builder.queryParam("uris", u);
+        if (uris != null && !uris.isEmpty()) {
+            for (String uri : uris) {
+                urlBuilder.append("&uris=").append(uri);
             }
         }
 
-        String urlString = builder.encode().toUriString();
-
-        try {
-            URI uri = URI.create(urlString);
-            log.info("StatsClient GET URL (toString): {}", uri.toString());
-            log.info("StatsClient GET URL (toASCIIString): {}", uri.toASCIIString());
-        } catch (Exception ex) {
-            log.warn("Can't create URI for logging: {}", ex.getMessage());
-            log.info("StatsClient GET URL raw: {}", urlString);
-        }
-
-        URI uri = URI.create(urlString);
-        return makeAndSendRequest(HttpMethod.GET, uri, null, null, new ParameterizedTypeReference<>() {});
-    }
-
-    private <T> ResponseEntity<T> makeAndSendRequest(HttpMethod method, URI uri,
-                                                     @Nullable Map<String, Object> parameters, Object body,
-                                                     ParameterizedTypeReference<T> responseType) {
-        HttpEntity<Object> requestEntity = new HttpEntity<>(body, defaultHeaders());
-        try {
-            ResponseEntity<T> response = rest.exchange(uri, method, requestEntity, responseType);
-            return response;
-        } catch (HttpStatusCodeException e) {
-            return ResponseEntity.status(e.getStatusCode()).body(null);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-
-    private HttpHeaders defaultHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-        return headers;
+        String url = urlBuilder.toString();
+        ResponseEntity<StatsDto[]> response = rest.exchange(
+                url,
+                HttpMethod.GET,
+                HttpEntity.EMPTY,
+                StatsDto[].class
+        );
+        return Arrays.asList(response.getBody());
     }
 }
