@@ -1,12 +1,15 @@
 package ru.practicum.event.services;
 
 import jakarta.transaction.Transactional;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -115,7 +118,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
     @Override
     public EventFullDto getEventByUserIdAndEventId(long userId, long eventId) throws NotFoundException,
-            ConflictException {
+                                                                                     ConflictException {
         log.info("Поиск полной информации о событии на уровне сервиса");
 
         User user = userService.findById(userId);
@@ -141,7 +144,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     @Override
     @Transactional
     public EventFullDto updateEvent(long userId, long eventId, EventUpdateDto dto) throws NotFoundException,
-            ConflictException {
+                                                                                          ConflictException {
         log.info("Обновление события на уровне сервиса");
 
         User user = userService.findById(userId);
@@ -247,8 +250,12 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
     private void changeEventState(Event event, EventUpdateDto update) {
         if (update.getStateAction() != null) {
-            if (update.getStateAction() == StateActions.SEND_TO_REVIEW) event.setState(States.PENDING);
-            if (update.getStateAction() == StateActions.CANCEL_REVIEW) event.setState(States.CANCELED);
+            if (update.getStateAction() == StateActions.SEND_TO_REVIEW) {
+                event.setState(States.PENDING);
+            }
+            if (update.getStateAction() == StateActions.CANCEL_REVIEW) {
+                event.setState(States.CANCELED);
+            }
         }
     }
 

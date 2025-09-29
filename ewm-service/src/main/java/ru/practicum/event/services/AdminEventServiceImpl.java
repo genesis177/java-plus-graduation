@@ -1,14 +1,18 @@
 package ru.practicum.event.services;
 
-import org.springframework.data.domain.PageRequest;
-import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.StatsClient;
 import ru.practicum.category.Category;
 import ru.practicum.category.service.CategoryService;
+import ru.practicum.common.exception.BadArgumentsException;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.event.Event;
@@ -22,10 +26,6 @@ import ru.practicum.event.services.interfaces.AdminEventService;
 import ru.practicum.location.Location;
 import ru.practicum.location.LocationMapper;
 import ru.practicum.location.LocationService;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -72,14 +72,14 @@ public class AdminEventServiceImpl implements AdminEventService {
                                                 LocalDateTime rangeStart,
                                                 LocalDateTime rangeEnd,
                                                 Integer from,
-                                                Integer size) throws BadRequestException {
+                                                Integer size) throws BadArgumentsException {
         log.info("Получен запрос администратора на получение события с фильтрами");
         if ((rangeStart != null) && (rangeEnd != null) && (rangeStart.isAfter(rangeEnd))) {
-            throw new BadRequestException("Время начала не может быть позже времени конца");
+            throw new BadArgumentsException("Время начала не может быть позже времени конца");
         }
 
         List<Event> events = eventRepository.findAllByFiltersAdmin(users, states, categories, rangeStart, rangeEnd,
-                PageRequest.of(from, size));
+                PageRequest.of(from, size)).getContent();
 
         return events.stream()
                 .map(EventMapper::mapToFullDto)
@@ -90,7 +90,9 @@ public class AdminEventServiceImpl implements AdminEventService {
     private void processState(Event event, StateActionsAdmin state, LocalDateTime now)
             throws ConflictException, BadRequestException {
 
-        if (state == null) return;
+        if (state == null) {
+            return;
+        }
 
         switch (state) {
             case PUBLISH_EVENT -> {

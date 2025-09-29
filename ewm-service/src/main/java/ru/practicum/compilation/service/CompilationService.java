@@ -1,12 +1,11 @@
 package ru.practicum.compilation.service;
 
-import org.apache.coyote.BadRequestException;
+import java.util.List;
+import ru.practicum.common.exception.BadArgumentsException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.compilation.dto.CompilationDto;
 import ru.practicum.compilation.dto.NewCompilationDto;
 import ru.practicum.compilation.dto.UpdateCompilationDto;
-
-import java.util.List;
 
 public interface CompilationService {
 
@@ -18,5 +17,5 @@ public interface CompilationService {
 
     CompilationDto getCompilationById(Long compId) throws NotFoundException;
 
-    List<CompilationDto> getCompilations(Boolean pinned, Integer from, Integer size) throws BadRequestException;
+    List<CompilationDto> getCompilations(Boolean pinned, Integer from, Integer size) throws BadArgumentsException;
 }

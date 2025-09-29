@@ -11,14 +11,14 @@ import java.util.stream.Collectors;
 @UtilityClass
 public class CompilationMapper {
 
-    public static Compilation toCompilation(NewCompilationDto dto) {
+    public Compilation toCompilation(NewCompilationDto dto) {
         return Compilation.builder()
                 .title(dto.getTitle())
                 .pinned(dto.getPinned())
                 .build();
     }
 
-    public static CompilationDto toCompilationDto(Compilation compilation) {
+    public CompilationDto toCompilationDto(Compilation compilation) {
         return CompilationDto.builder()
                 .id(compilation.getId())
                 .title(compilation.getTitle())

@@ -9,27 +9,27 @@ import java.util.List;
 @UtilityClass
 public class CategoryMapper {
 
-    public static CategoryDto toCategoryDto(Category category) {
+    public CategoryDto toCategoryDto(Category category) {
         return CategoryDto.builder()
                 .id(category.getId())
                 .name(category.getName())
                 .build();
     }
 
-    public static Category toCategory(CategoryDto categoryDto) {
+    public Category toCategory(CategoryDto categoryDto) {
         return Category.builder()
                 .id(categoryDto.getId())
                 .name(categoryDto.getName())
                 .build();
     }
 
-    public static Category toCategory(NewCategoryDto categoryDto) {
+    public Category toCategory(NewCategoryDto categoryDto) {
         return Category.builder()
                 .name(categoryDto.getName())
                 .build();
     }
 
-    public static List<CategoryDto> toCategoryDtoList(List<Category> categories) {
+    public List<CategoryDto> toCategoryDtoList(List<Category> categories) {
         return categories.stream()
                 .map(CategoryMapper::toCategoryDto)
                 .toList();

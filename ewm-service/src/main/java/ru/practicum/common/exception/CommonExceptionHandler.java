@@ -3,9 +3,7 @@ package ru.practicum.common.exception;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -45,10 +43,10 @@ public class CommonExceptionHandler {
                 .build();
     }
 
-    @ExceptionHandler(BadRequestException.class)
+    @ExceptionHandler(BadArgumentsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponseDto handleBadRequest(final BadRequestException e) {
-        log.warn("Вызвано исключение BadRequestException с текстом {}", e.getMessage());
+    public ErrorResponseDto handleBadArguments(final BadArgumentsException e) {
+        log.warn("Вызвано исключение BadArgumentsException с текстом {}", e.getMessage());
 
         return ErrorResponseDto.builder()
                 .status(HttpStatus.BAD_REQUEST.toString())
@@ -79,7 +77,8 @@ public class CommonExceptionHandler {
         String message = e.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(fe -> "Field: " + fe.getField() + ". Error: " + fe.getDefaultMessage() + ". Value: " + fe.getRejectedValue())
+                .map(fe -> "Field: " + fe.getField() + ". Error: " + fe.getDefaultMessage() + ". Value: "
+                        + fe.getRejectedValue())
                 .collect(Collectors.joining("; "));
 
         return ErrorResponseDto.builder()

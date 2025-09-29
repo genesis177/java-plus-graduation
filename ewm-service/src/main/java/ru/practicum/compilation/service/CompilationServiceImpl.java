@@ -1,13 +1,17 @@
 package ru.practicum.compilation.service;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.common.exception.BadArgumentsException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.compilation.Compilation;
 import ru.practicum.compilation.CompilationMapper;
@@ -17,11 +21,6 @@ import ru.practicum.compilation.dto.NewCompilationDto;
 import ru.practicum.compilation.dto.UpdateCompilationDto;
 import ru.practicum.event.Event;
 import ru.practicum.event.EventRepository;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,13 +39,24 @@ public class CompilationServiceImpl implements CompilationService {
 
         // Добавлять события в подборку, если они указаны
         if (dto.getEvents() != null && !dto.getEvents().isEmpty()) {
-            Set<Event> events = new HashSet<>();
-            for (Long eventId : dto.getEvents()) {
-                Event event = eventRepository.findById(eventId)
-                        .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-                events.add(event);
+            // Получаем коллекцию событий по списку идентификаторов из DTO
+            List<Event> events = eventRepository.findAllById(dto.getEvents());
+
+            // Формируем список идентификаторов событий, которые были в DTO, но не найдены в БД
+            Set<Long> foundIds = events.stream()
+                    .map(Event::getId)
+                    .collect(Collectors.toSet());
+
+            List<Long> missedEventIds = dto.getEvents().stream()
+                    .filter(id -> !foundIds.contains(id))
+                    .toList();
+
+            // Если список не пустой
+            if (!missedEventIds.isEmpty()) {
+                throw new NotFoundException("Events with ids=" + missedEventIds + " was not found");
             }
-            compilation.setEvents(events);
+
+            compilation.setEvents(new HashSet<>(events));
         }
 
         compilation = compilationRepository.save(compilation);
@@ -111,10 +121,11 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CompilationDto> getCompilations(Boolean pinned, Integer from, Integer size) throws BadRequestException {
+    public List<CompilationDto> getCompilations(Boolean pinned, Integer from, Integer size) throws
+                                                                                            BadArgumentsException {
 
         if (from < 0 || size <= 0) {
-            throw new BadRequestException("Неверные параметры пагинации");
+            throw new BadArgumentsException("Неверные параметры пагинации");
         }
 
         Pageable pageable = PageRequest.of(from / size, size);
