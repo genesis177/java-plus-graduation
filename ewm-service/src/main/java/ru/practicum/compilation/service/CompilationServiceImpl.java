@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.common.exception.AlreadyExistsException;
 import ru.practicum.common.exception.BadArgumentsException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.compilation.Compilation;
@@ -32,10 +33,14 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     @Transactional
-    public CompilationDto addCompilation(NewCompilationDto dto) throws NotFoundException {
+    public CompilationDto addCompilation(NewCompilationDto dto) throws NotFoundException, AlreadyExistsException {
         log.info("Создание новой подборки: {}", dto.getTitle());
 
         Compilation compilation = CompilationMapper.toCompilation(dto);
+
+        if (compilationRepository.existsByTitle(compilation.getTitle())) {
+            throw new AlreadyExistsException("Подборка с таким именем уже существует");
+        }
 
         // Добавлять события в подборку, если они указаны
         if (dto.getEvents() != null && !dto.getEvents().isEmpty()) {
@@ -80,7 +85,7 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     @Transactional
-    public CompilationDto updateCompilation(Long compId, UpdateCompilationDto dto) throws NotFoundException {
+    public CompilationDto updateCompilation(Long compId, UpdateCompilationDto dto) throws NotFoundException, AlreadyExistsException {
         log.info("Обновление подборки с id: {}", compId);
 
         Compilation compilation = compilationRepository.findById(compId)
@@ -88,6 +93,9 @@ public class CompilationServiceImpl implements CompilationService {
 
         // Обновлять поля подборки, если они переданы
         if (dto.getTitle() != null) {
+            if (compilationRepository.existsByTitle(dto.getTitle())) {
+                throw new AlreadyExistsException("Подборка с таким именем уже существует");
+            }
             compilation.setTitle(dto.getTitle());
         }
 

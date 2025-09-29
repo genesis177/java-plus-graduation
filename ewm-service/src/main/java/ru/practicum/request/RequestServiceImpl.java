@@ -1,7 +1,5 @@
 package ru.practicum.request;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -32,8 +30,6 @@ public class RequestServiceImpl implements RequestService {
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
     private final RequestRepository requestRepository;
-    @PersistenceContext
-    private EntityManager entityManager;
 
     @Override
     public List<RequestGetDto> getRequestsByUserId(long userId, int from, int size)
@@ -224,7 +220,7 @@ public class RequestServiceImpl implements RequestService {
                 .peek(request -> request.setStatus(RequestStatus.REJECTED))
                 .toList();
 
-        entityManager.flush();
+        requestRepository.flush();
 
         RequestsChangeStatusResponseDto response = new RequestsChangeStatusResponseDto();
 
@@ -247,7 +243,7 @@ public class RequestServiceImpl implements RequestService {
                 .peek(request -> request.setStatus(RequestStatus.REJECTED))
                 .toList();
 
-        entityManager.flush();
+        requestRepository.flush();
 
         RequestsChangeStatusResponseDto response = new RequestsChangeStatusResponseDto();
 

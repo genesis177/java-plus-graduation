@@ -88,24 +88,4 @@ public class CommonExceptionHandler {
                 .timestamp(LocalDateTime.now().format(DATE_TIME_FORMATTER))
                 .build();
     }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    @ResponseStatus(HttpStatus.CONFLICT) // Это гарантирует 409 статус
-    public ErrorResponseDto handleDataIntegrityViolation(final DataIntegrityViolationException e) {
-        log.warn("Вызвано исключение DataIntegrityViolationException с текстом {}", e.getMessage());
-
-        // Проверяем, связано ли исключение с уникальным ограничением на название подборки
-        String message = "could not execute statement; SQL [n/a]; constraint [uq_compilation_name]; nested exception is org.hibernate.exception(...): could not execute statement";
-
-        if (e.getMessage() != null && e.getMessage().contains("uq_compilation_name")) {
-            message = "could not execute statement; SQL [n/a]; constraint [uq_compilation_name]; nested exception is org.hibernate.exception(...): could not execute statement";
-        }
-
-        return ErrorResponseDto.builder()
-                .status("409 CONFLICT") // Явно указала статус 409
-                .reason("Integrity constraint has been violated.")
-                .message(message)
-                .timestamp(LocalDateTime.now().format(DATE_TIME_FORMATTER))
-                .build();
-    }
 }
