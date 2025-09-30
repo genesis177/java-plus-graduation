@@ -1,6 +1,5 @@
 package ru.practicum.event.services.interfaces;
 
-import java.util.Collection;
 
 import org.springframework.data.domain.Page;
 import ru.practicum.common.exception.ConflictException;
