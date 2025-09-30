@@ -1,10 +1,11 @@
 package ru.practicum.event.controllers;
 
 import java.util.Collection;
-import java.util.List;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -50,9 +51,14 @@ public class PrivateEventController {
     @ResponseStatus(HttpStatus.OK)
     public Collection<EventShortDto> getEventsByUserId(@PathVariable(name = "userId") long userId,
                                                        @RequestParam(name = "from", required = false, defaultValue = "0") int from,
-                                                       @RequestParam(name = "size", required = false, defaultValue = "10") int size) throws
+                                                       @RequestParam(name = "size", required = false, defaultValue = "10") int size,
+                                                       HttpServletResponse response) throws
             NotFoundException {
-        return privateEventService.getEventsByUserId(userId, from, size);
+
+        Page<EventShortDto> page = privateEventService.getEventsByUserId(userId, from, size);
+        response.setHeader("X-Total-Count", String.valueOf(page.getTotalElements()));
+
+        return page.getContent();
     }
 
 
@@ -111,7 +117,7 @@ public class PrivateEventController {
      */
     @GetMapping("/{eventId}/requests")
     @ResponseStatus(HttpStatus.OK)
-    public List<RequestGetDto> getRequestsByUserIdAndEventId(
+    public Collection<RequestGetDto> getRequestsByUserIdAndEventId(
             @PathVariable(name = "userId") long userId,
             @PathVariable(name = "eventId") long eventId
     ) throws ConflictException, NotFoundException {
@@ -123,7 +129,7 @@ public class PrivateEventController {
      *
      * @param userId  id текущего пользователя
      * @param eventId id события
-     * @param dto    данные добавляемого события
+     * @param dto     данные добавляемого события
      * @return измененные заявки
      */
     @PatchMapping("/{eventId}/requests")

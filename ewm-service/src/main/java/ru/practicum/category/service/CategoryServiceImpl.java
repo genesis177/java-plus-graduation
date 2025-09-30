@@ -1,7 +1,5 @@
 package ru.practicum.category.service;
 
-import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -44,12 +42,14 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoryDto> getCategory(int from, int size) {
-        Pageable pageable = PageRequest.of(from / size, size);
+    public Page<CategoryDto> getCategories(int from, int size) {
+        int page = from / size;
+        Pageable pageable = PageRequest.of(page, size);
         log.info("Получить все категории с пагинацией from={}, size={}", from, size);
 
         Page<Category> categoryPage = repository.findAll(pageable);
-        return CategoryMapper.toCategoryDtoList(categoryPage.getContent());
+
+        return categoryPage.map(CategoryMapper::toCategoryDto);
     }
 
     @Override

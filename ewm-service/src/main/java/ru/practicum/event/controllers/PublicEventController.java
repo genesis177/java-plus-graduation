@@ -1,11 +1,12 @@
 package ru.practicum.event.controllers;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
-import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.common.exception.NotFoundException;
@@ -30,10 +31,8 @@ public class PublicEventController {
                                          @RequestParam(required = false) Boolean paid,
 
                                          @RequestParam(required = false)
-                                         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
                                          LocalDateTime rangeStart,
                                          @RequestParam(required = false)
-                                         @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
                                          LocalDateTime rangeEnd,
 
                                          @RequestParam(defaultValue = "false")
@@ -46,9 +45,15 @@ public class PublicEventController {
                                          @RequestParam(defaultValue = "0") Integer from,
                                          @RequestParam(defaultValue = "10") Integer size,
 
-                                         HttpServletRequest request) throws BadRequestException {
-        return publicEventService.getEventsWithFilters(text, categories, paid,
+                                         HttpServletRequest request,
+                                         HttpServletResponse response) throws BadRequestException {
+
+        Page<EventShortDto> page = publicEventService.getEventsWithFilters(text, categories, paid,
                 rangeStart, rangeEnd, onlyAvailable, sort, from, size, request);
+
+        response.setHeader("X-Total-Count", String.valueOf(page.getTotalElements()));
+
+        return page.getContent();
     }
 
     @GetMapping("/{eventId}")

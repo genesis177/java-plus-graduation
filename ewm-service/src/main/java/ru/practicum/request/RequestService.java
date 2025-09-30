@@ -1,5 +1,6 @@
 package ru.practicum.request;
 
+import org.springframework.data.domain.Page;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.request.dto.RequestGetDto;
@@ -10,7 +11,7 @@ import java.util.List;
 
 public interface RequestService {
 
-    List<RequestGetDto> getRequestsByUserId(long userId, int from, int size)
+    Page<RequestGetDto> getRequestsByUserId(long userId, int from, int size)
             throws NotFoundException;
 
     RequestGetDto createRequest(long userId, long eventId)

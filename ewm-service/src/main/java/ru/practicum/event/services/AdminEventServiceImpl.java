@@ -2,10 +2,11 @@ package ru.practicum.event.services;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,7 +67,7 @@ public class AdminEventServiceImpl implements AdminEventService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventFullDto> getEventsForAdmin(List<Long> users,
+    public Page<EventFullDto> getEventsForAdmin(List<Long> users,
                                                 List<String> states,
                                                 List<Long> categories,
                                                 LocalDateTime rangeStart,
@@ -77,13 +78,11 @@ public class AdminEventServiceImpl implements AdminEventService {
         if ((rangeStart != null) && (rangeEnd != null) && (rangeStart.isAfter(rangeEnd))) {
             throw new BadArgumentsException("Время начала не может быть позже времени конца");
         }
+        int page = from / size;
+        Page<Event> events = eventRepository.findAllByFiltersAdmin(users, states, categories, rangeStart, rangeEnd,
+                PageRequest.of(page, size));
 
-        List<Event> events = eventRepository.findAllByFiltersAdmin(users, states, categories, rangeStart, rangeEnd,
-                PageRequest.of(from, size)).getContent();
-
-        return events.stream()
-                .map(EventMapper::mapToFullDto)
-                .collect(Collectors.toList());
+        return events.map(EventMapper::mapToFullDto);
     }
 
 

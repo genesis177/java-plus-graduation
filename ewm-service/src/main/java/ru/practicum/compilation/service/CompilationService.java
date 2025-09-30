@@ -1,7 +1,7 @@
 package ru.practicum.compilation.service;
 
-import java.util.List;
 
+import org.springframework.data.domain.Page;
 import ru.practicum.common.exception.AlreadyExistsException;
 import ru.practicum.common.exception.BadArgumentsException;
 import ru.practicum.common.exception.NotFoundException;
@@ -19,5 +19,5 @@ public interface CompilationService {
 
     CompilationDto getCompilationById(Long compId) throws NotFoundException;
 
-    List<CompilationDto> getCompilations(Boolean pinned, Integer from, Integer size) throws BadArgumentsException;
+    Page<CompilationDto> getCompilations(Boolean pinned, Integer from, Integer size) throws BadArgumentsException;
 }

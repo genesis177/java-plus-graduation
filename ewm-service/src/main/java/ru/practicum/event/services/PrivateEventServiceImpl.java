@@ -1,17 +1,20 @@
 package ru.practicum.event.services;
 
 import jakarta.transaction.Transactional;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -53,26 +56,31 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     private final EventRepository eventRepository;
 
     @Override
-    public Collection<EventShortDto> getEventsByUserId(long userId, int from, int size) throws NotFoundException {
+    public Page<EventShortDto> getEventsByUserId(long userId, int from, int size) throws NotFoundException {
         log.info("Запрос списка событий, созданных пользователем на уровне сервиса");
 
         User user = userService.findById(userId);
         log.info("Передан идентификатор инициатора событий: {}", user.getId());
 
-        PageRequest pageRequest = PageRequest.of(from, size, Sort.by(Direction.ASC, "id"));
+        int page = from / size;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Direction.ASC, "id"));
 
-        Collection<Event> searchResult = eventRepository.findAllByInitiatorId(user.getId(), pageRequest).getContent();
-        log.info("Из хранилища получена коллекция размером {}", searchResult.size());
+        Page<Event> searchResult = eventRepository.findAllByInitiatorId(user.getId(), pageRequest);
+        log.info("Из хранилища получена коллекция размером {}", searchResult.getTotalElements());
 
-        Collection<EventShortDto> result = searchResult.stream()
+        List<Event> events = searchResult.getContent();
+
+        Map<Long, Long> views = getAmountOfViews(events);
+
+        List<EventShortDto> dtoList = events.stream()
                 .map(EventMapper::mapToEventShortDto)
-                .toList();
+                .peek(eventShortDto -> eventShortDto.setViews(views.getOrDefault(eventShortDto.getId(), 0L)))
+                .collect(Collectors.toList());
 
-        completeCollection(result, searchResult);
-        log.info("Полученная коллекция преобразована. Размер коллекции после преобразования {}", result.size());
+        log.info("Полученная коллекция преобразована. Размер коллекции после преобразования {}", dtoList.size());
 
         log.info("Возврат результатов поиска на уровень контроллера");
-        return result;
+        return new PageImpl<>(dtoList, pageRequest, searchResult.getTotalElements());
     }
 
     @Override
@@ -118,7 +126,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
     @Override
     public EventFullDto getEventByUserIdAndEventId(long userId, long eventId) throws NotFoundException,
-                                                                                     ConflictException {
+            ConflictException {
         log.info("Поиск полной информации о событии на уровне сервиса");
 
         User user = userService.findById(userId);
@@ -144,7 +152,7 @@ public class PrivateEventServiceImpl implements PrivateEventService {
     @Override
     @Transactional
     public EventFullDto updateEvent(long userId, long eventId, EventUpdateDto dto) throws NotFoundException,
-                                                                                          ConflictException {
+            ConflictException {
         log.info("Обновление события на уровне сервиса");
 
         User user = userService.findById(userId);
@@ -182,24 +190,6 @@ public class PrivateEventServiceImpl implements PrivateEventService {
 
         log.info("Возврат результатов обновления события на уровень контроллера");
         return result;
-    }
-
-    /**
-     * Метод заполняет переданную коллекцию событий
-     *
-     * @param events коллекция событий
-     */
-    private void completeCollection(Collection<EventShortDto> eventsShortDto, Collection<Event> events) {
-        log.info("Заполнение коллекции событий");
-
-        log.info("Заполнение количества просмотров");
-        Map<Long, Long> views = getAmountOfViews(events.stream().toList());
-        for (EventShortDto event : eventsShortDto) {
-            event.setViews(views.getOrDefault(event.getId(), 0L));
-        }
-        log.info("Заполнение количества просмотров завершено");
-
-        log.info("Заполнение коллекции завершено");
     }
 
     /**

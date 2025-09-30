@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,7 +32,7 @@ public class PublicEventService {
     private final StatsClient statsClient;
 
     @Transactional(readOnly = true)
-    public List<EventShortDto> getEventsWithFilters(String text, List<Long> categories, Boolean paid,
+    public Page<EventShortDto> getEventsWithFilters(String text, List<Long> categories, Boolean paid,
                                                     LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                     Boolean onlyAvailable, String sort, Integer from,
                                                     Integer size, HttpServletRequest request) throws BadRequestException {
@@ -40,8 +41,9 @@ public class PublicEventService {
             throw new BadRequestException("Время начала не может быть позже окончания");
         }
 
-        List<Event> events = eventRepository.findAllByFiltersPublic(text, categories, paid, rangeStart, rangeEnd,
-                onlyAvailable, PageRequest.of(from, size));
+        int page = from / size;
+        Page<Event> events = eventRepository.findAllByFiltersPublic(text, categories, paid, rangeStart, rangeEnd,
+                onlyAvailable, PageRequest.of(page, size));
 
         try {
             statsClient.postHit(HitDto.builder()
@@ -54,15 +56,13 @@ public class PublicEventService {
             log.info("Не удалось отправить запрос о сохранении статистики " + e.getMessage());
         }
 
-        Map<Long, Long> views = getAmountOfViews(events);
+        Map<Long, Long> views = getAmountOfViews(events.getContent());
 
-        return events.stream()
-                .map(event -> {
-                    EventShortDto dto = EventMapper.mapToEventShortDto(event);
-                    dto.setViews(views.getOrDefault(event.getId(), 0L));
-                    return dto;
-                })
-                .collect(Collectors.toList());
+        return events.map(event -> {
+            EventShortDto dto = EventMapper.mapToEventShortDto(event);
+            dto.setViews(views.getOrDefault(event.getId(), 0L));
+            return dto;
+        });
     }
 
     public EventFullDto getEventById(Long eventId, HttpServletRequest request) throws NotFoundException, BadRequestException {

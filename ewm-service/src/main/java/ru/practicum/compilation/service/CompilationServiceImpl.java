@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -129,8 +130,8 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CompilationDto> getCompilations(Boolean pinned, Integer from, Integer size) throws
-                                                                                            BadArgumentsException {
+    public Page<CompilationDto> getCompilations(Boolean pinned, Integer from, Integer size) throws
+            BadArgumentsException {
 
         if (from < 0 || size <= 0) {
             throw new BadArgumentsException("Неверные параметры пагинации");
@@ -144,8 +145,6 @@ public class CompilationServiceImpl implements CompilationService {
         } else {
             page = compilationRepository.findAll(pageable);
         }
-        return page.getContent().stream()
-                .map(CompilationMapper::toCompilationDto)
-                .collect(Collectors.toList());
+        return page.map(CompilationMapper::toCompilationDto);
     }
 }

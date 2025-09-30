@@ -4,8 +4,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -32,21 +34,20 @@ public class RequestServiceImpl implements RequestService {
     private final RequestRepository requestRepository;
 
     @Override
-    public List<RequestGetDto> getRequestsByUserId(long userId, int from, int size)
+    public Page<RequestGetDto> getRequestsByUserId(long userId, int from, int size)
             throws NotFoundException {
         log.info("Запрос списка заявок пользователя с id: {}", userId);
 
-        PageRequest pageRequest = PageRequest.of(from, size, Sort.by(Sort.Direction.ASC, "id"));
+        int page = from / size;
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
 
-        List<Request> requests = requestRepository.findAllByRequesterId(user.getId(), pageRequest).getContent();
-        log.info("Количество найденных заявок: {}", requests.size());
+        Page<Request> requests = requestRepository.findAllByRequesterId(user.getId(), pageRequest);
+        log.info("Количество найденных заявок: {}", requests.getTotalElements());
 
-        return requests.stream()
-                .map(RequestMapper::toRequestGetDto)
-                .collect(Collectors.toList());
+        return requests.map(RequestMapper::toRequestGetDto);
     }
 
     @Override
@@ -162,7 +163,7 @@ public class RequestServiceImpl implements RequestService {
     }
 
     private List<Request> validateAndGetRequests(List<Long> requestIds, Long eventId) throws NotFoundException,
-                                                                                             ConflictException {
+            ConflictException {
         List<Request> requests = requestRepository.findByIdInAndEventId(requestIds, eventId);
 
         if (requests.size() != requestIds.size()) {
@@ -204,7 +205,7 @@ public class RequestServiceImpl implements RequestService {
 
     private RequestsChangeStatusResponseDto requestsChangeStatusToConfirmed(Event event, List<Request> requests,
                                                                             RequestsChangeStatusRequestDto dto) throws
-                                                                                                                ConflictException {
+            ConflictException {
 
         validateLimit(event, dto);
 
