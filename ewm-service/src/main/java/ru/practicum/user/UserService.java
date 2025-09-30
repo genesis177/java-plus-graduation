@@ -1,7 +1,8 @@
 package ru.practicum.user;
 
-import java.util.Collection;
 import java.util.List;
+
+import org.springframework.data.domain.Page;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.user.dto.UserCreateDto;
@@ -12,12 +13,12 @@ public interface UserService {
     /**
      * Метод возвращает коллекцию {@link UserDto} на основе переданных параметров
      *
-     * @param ids список идентификаторов пользователей
+     * @param ids  список идентификаторов пользователей
      * @param from номер начального элемента
      * @param size максимальный размер коллекции
      * @return коллекция {@link UserDto}
      */
-    Collection<UserDto> getUsers(List<Long> ids, int from, int size);
+    Page<UserDto> getUsers(List<Long> ids, int from, int size);
 
     /**
      * Метод получает несохранённый экземпляр класса {@link UserCreateDto}, проверяет его, передает для сохранения и

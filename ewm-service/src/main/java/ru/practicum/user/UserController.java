@@ -1,10 +1,14 @@
 package ru.practicum.user;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+
 import java.util.Collection;
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +38,7 @@ public class UserController {
     /**
      * Получение информации о пользователях
      *
-     * @param ids id пользователей
+     * @param ids  id пользователей
      * @param from количество элементов, которые нужно пропустить для формирования текущего набора
      * @param size количество элементов в наборе
      * @return коллекция {@link UserDto}
@@ -43,9 +47,12 @@ public class UserController {
     @ResponseStatus(HttpStatus.OK)
     public Collection<UserDto> getUsers(@RequestParam(name = "ids", required = false) List<Long> ids,
                                         @RequestParam(name = "from", required = false, defaultValue = "0") int from,
-                                        @RequestParam(name = "size", required = false, defaultValue = "10") int size) {
+                                        @RequestParam(name = "size", required = false, defaultValue = "10") int size,
+                                        HttpServletResponse response) {
+        Page<UserDto> page = userService.getUsers(ids, from, size);
+        response.setHeader("X-Total-Count", String.valueOf(page.getTotalElements()));
 
-        return userService.getUsers(ids, from, size);
+        return page.getContent();
     }
 
     /**

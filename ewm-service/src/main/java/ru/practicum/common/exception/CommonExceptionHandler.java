@@ -3,10 +3,7 @@ package ru.practicum.common.exception;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -45,10 +42,10 @@ public class CommonExceptionHandler {
                 .build();
     }
 
-    @ExceptionHandler(BadRequestException.class)
+    @ExceptionHandler(BadArgumentsException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponseDto handleBadRequest(final BadRequestException e) {
-        log.warn("Вызвано исключение BadRequestException с текстом {}", e.getMessage());
+    public ErrorResponseDto handleBadArguments(final BadArgumentsException e) {
+        log.warn("Вызвано исключение BadArgumentsException с текстом {}", e.getMessage());
 
         return ErrorResponseDto.builder()
                 .status(HttpStatus.BAD_REQUEST.toString())
@@ -79,33 +76,14 @@ public class CommonExceptionHandler {
         String message = e.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(fe -> "Field: " + fe.getField() + ". Error: " + fe.getDefaultMessage() + ". Value: " + fe.getRejectedValue())
+                .map(fe -> "Field: " + fe.getField() + ". Error: " + fe.getDefaultMessage() + ". Value: "
+                        + fe.getRejectedValue())
                 .collect(Collectors.joining("; "));
 
         return ErrorResponseDto.builder()
                 .status(HttpStatus.BAD_REQUEST.toString())
                 .reason("Incorrectly made request.")
                 .message(message.isEmpty() ? "Validation failed" : message)
-                .timestamp(LocalDateTime.now().format(DATE_TIME_FORMATTER))
-                .build();
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    @ResponseStatus(HttpStatus.CONFLICT) // Это гарантирует 409 статус
-    public ErrorResponseDto handleDataIntegrityViolation(final DataIntegrityViolationException e) {
-        log.warn("Вызвано исключение DataIntegrityViolationException с текстом {}", e.getMessage());
-
-        // Проверяем, связано ли исключение с уникальным ограничением на название подборки
-        String message = "could not execute statement; SQL [n/a]; constraint [uq_compilation_name]; nested exception is org.hibernate.exception(...): could not execute statement";
-
-        if (e.getMessage() != null && e.getMessage().contains("uq_compilation_name")) {
-            message = "could not execute statement; SQL [n/a]; constraint [uq_compilation_name]; nested exception is org.hibernate.exception(...): could not execute statement";
-        }
-
-        return ErrorResponseDto.builder()
-                .status("409 CONFLICT") // Явно указала статус 409
-                .reason("Integrity constraint has been violated.")
-                .message(message)
                 .timestamp(LocalDateTime.now().format(DATE_TIME_FORMATTER))
                 .build();
     }

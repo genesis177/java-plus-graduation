@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.common.exception.AlreadyExistsException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.compilation.dto.CompilationDto;
 import ru.practicum.compilation.dto.NewCompilationDto;
@@ -19,7 +20,7 @@ public class AdminCompilationController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED) // Код 201
-    public CompilationDto addCompilation(@RequestBody @Valid NewCompilationDto dto) throws NotFoundException {
+    public CompilationDto addCompilation(@RequestBody @Valid NewCompilationDto dto) throws NotFoundException, AlreadyExistsException {
         return compilationService.addCompilation(dto);
     }
 
@@ -32,7 +33,7 @@ public class AdminCompilationController {
     @PatchMapping("/{compId}")
     @ResponseStatus(HttpStatus.OK) // Код 200
     public CompilationDto updateCompilation(@PathVariable Long compId,
-                                            @RequestBody @Valid UpdateCompilationDto dto) throws NotFoundException {
+                                            @RequestBody @Valid UpdateCompilationDto dto) throws NotFoundException, AlreadyExistsException {
         return compilationService.updateCompilation(compId, dto);
     }
 }

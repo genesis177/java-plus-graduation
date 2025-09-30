@@ -1,13 +1,15 @@
 package ru.practicum.request;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.request.dto.RequestGetDto;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Закрытый API для работы с запросами текущего пользователя на участие в событиях
@@ -21,12 +23,17 @@ public class RequestController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<RequestGetDto> getRequestsByUserId(
-        @PathVariable(name = "userId") long userId,
-        @RequestParam(name = "from", defaultValue = "0") int from,
-        @RequestParam(name = "size", defaultValue = "10") int size
+    public Collection<RequestGetDto> getRequestsByUserId(
+            @PathVariable(name = "userId") long userId,
+            @RequestParam(name = "from", defaultValue = "0") int from,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            HttpServletResponse response
     ) throws NotFoundException {
-        return requestService.getRequestsByUserId(userId, from, size);
+
+        Page<RequestGetDto> page = requestService.getRequestsByUserId(userId, from, size);
+        response.setHeader("X-Total-Count", String.valueOf(page.getTotalElements()));
+
+        return page.getContent();
     }
 
     @PostMapping

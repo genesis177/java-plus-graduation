@@ -21,7 +21,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                 AND (CAST(?4 AS timestamp) IS NULL OR e.eventDate >= ?4)
                 AND (CAST(?5 AS timestamp) IS NULL OR e.eventDate < ?5)
             """)
-    List<Event> findAllByFiltersAdmin(List<Long> users, List<String> states, List<Long> categories,
+    Page<Event> findAllByFiltersAdmin(List<Long> users, List<String> states, List<Long> categories,
                                       LocalDateTime rangeStart, LocalDateTime rangeEnd, Pageable pageable);
 
     @Query("""
@@ -35,8 +35,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                 AND (CAST(?5 AS timestamp) IS NULL OR e.eventDate < ?5)
                 AND (?6 = false OR e.participantLimit = 0 OR e.participantLimit < e.confirmedRequests)
             """)
-    List<Event> findAllByFiltersPublic(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
-                                            LocalDateTime rangeEnd, Boolean onlyAvailable, Pageable pageable);
+    Page<Event> findAllByFiltersPublic(String text, List<Long> categories, Boolean paid, LocalDateTime rangeStart,
+                                       LocalDateTime rangeEnd, Boolean onlyAvailable, Pageable pageable);
 
     boolean existsByCategoryId(Long categoryId);
 }

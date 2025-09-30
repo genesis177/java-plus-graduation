@@ -1,7 +1,5 @@
 package ru.practicum.category.service;
 
-import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -19,7 +17,6 @@ import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.event.EventRepository;
 
-@Transactional
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -29,6 +26,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final EventRepository eventRepository;
 
     @Override
+    @Transactional
     public CategoryDto addCategory(NewCategoryDto dto) throws AlreadyExistsException {
         log.info("Проверка dto категории: {}", dto);
         if (repository.existsByName(dto.getName())) {
@@ -44,12 +42,14 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CategoryDto> getCategory(int from, int size) {
-        Pageable pageable = PageRequest.of(from / size, size);
+    public Page<CategoryDto> getCategories(int from, int size) {
+        int page = from / size;
+        Pageable pageable = PageRequest.of(page, size);
         log.info("Получить все категории с пагинацией from={}, size={}", from, size);
 
         Page<Category> categoryPage = repository.findAll(pageable);
-        return CategoryMapper.toCategoryDtoList(categoryPage.getContent());
+
+        return categoryPage.map(CategoryMapper::toCategoryDto);
     }
 
     @Override
@@ -63,6 +63,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public CategoryDto updateCategory(Long id, NewCategoryDto dto) throws NotFoundException, AlreadyExistsException {
         log.info("Обновить категорию: {}", dto);
         Category category = repository.findById(id)
@@ -79,6 +80,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public void deleteCategory(Long id) throws NotFoundException, ConflictException {
         log.info("Удалить категорию по id: {}", id);
         if (!repository.existsById(id)) {
@@ -92,6 +94,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Category findById(Long id) throws NotFoundException {
         return repository.findById(id).orElseThrow(
                 () -> new NotFoundException("Категория с id " + id + " не найдена"));

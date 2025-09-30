@@ -1,19 +1,28 @@
 package ru.practicum.event.controllers;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.BadRequestException;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import ru.practicum.common.exception.BadArgumentsException;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.event.dto.EventAdminUpdateDto;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.services.interfaces.AdminEventService;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping(path = "/admin/events")
@@ -35,14 +44,17 @@ public class AdminEventController {
                                         @RequestParam(required = false) List<Long> categories,
 
                                         @RequestParam(required = false)
-                                        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
                                         LocalDateTime rangeStart,
                                         @RequestParam(required = false)
-                                        @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
                                         LocalDateTime rangeEnd,
 
                                         @RequestParam(defaultValue = "0") Integer from,
-                                        @RequestParam(defaultValue = "10") Integer size) throws BadRequestException {
-        return adminEventService.getEventsForAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
+                                        @RequestParam(defaultValue = "10") Integer size,
+                                        HttpServletResponse response) throws BadArgumentsException {
+
+        Page<EventFullDto> page = adminEventService.getEventsForAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
+        response.setHeader("X-Total-Count", String.valueOf(page.getTotalElements()));
+
+        return page.getContent();
     }
 }

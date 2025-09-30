@@ -1,14 +1,19 @@
 package ru.practicum.event.services;
 
-import org.springframework.data.domain.PageRequest;
-import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.StatsClient;
 import ru.practicum.category.Category;
 import ru.practicum.category.service.CategoryService;
+import ru.practicum.common.exception.BadArgumentsException;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.event.Event;
@@ -22,10 +27,6 @@ import ru.practicum.event.services.interfaces.AdminEventService;
 import ru.practicum.location.Location;
 import ru.practicum.location.LocationMapper;
 import ru.practicum.location.LocationService;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -66,31 +67,31 @@ public class AdminEventServiceImpl implements AdminEventService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventFullDto> getEventsForAdmin(List<Long> users,
+    public Page<EventFullDto> getEventsForAdmin(List<Long> users,
                                                 List<String> states,
                                                 List<Long> categories,
                                                 LocalDateTime rangeStart,
                                                 LocalDateTime rangeEnd,
                                                 Integer from,
-                                                Integer size) throws BadRequestException {
+                                                Integer size) throws BadArgumentsException {
         log.info("Получен запрос администратора на получение события с фильтрами");
         if ((rangeStart != null) && (rangeEnd != null) && (rangeStart.isAfter(rangeEnd))) {
-            throw new BadRequestException("Время начала не может быть позже времени конца");
+            throw new BadArgumentsException("Время начала не может быть позже времени конца");
         }
+        int page = from / size;
+        Page<Event> events = eventRepository.findAllByFiltersAdmin(users, states, categories, rangeStart, rangeEnd,
+                PageRequest.of(page, size));
 
-        List<Event> events = eventRepository.findAllByFiltersAdmin(users, states, categories, rangeStart, rangeEnd,
-                PageRequest.of(from, size));
-
-        return events.stream()
-                .map(EventMapper::mapToFullDto)
-                .collect(Collectors.toList());
+        return events.map(EventMapper::mapToFullDto);
     }
 
 
     private void processState(Event event, StateActionsAdmin state, LocalDateTime now)
             throws ConflictException, BadRequestException {
 
-        if (state == null) return;
+        if (state == null) {
+            return;
+        }
 
         switch (state) {
             case PUBLISH_EVENT -> {

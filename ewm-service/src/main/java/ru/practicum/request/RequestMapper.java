@@ -1,13 +1,12 @@
 package ru.practicum.request;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import lombok.experimental.UtilityClass;
 import ru.practicum.request.dto.RequestGetDto;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@UtilityClass
 public final class RequestMapper {
 
-    public static RequestGetDto toRequestGetDto(Request request) {
+    public RequestGetDto toRequestGetDto(Request request) {
         return RequestGetDto.builder()
                 .id(request.getId())
                 .created(request.getCreated())

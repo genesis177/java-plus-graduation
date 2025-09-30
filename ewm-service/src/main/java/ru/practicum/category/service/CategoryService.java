@@ -1,7 +1,6 @@
 package ru.practicum.category.service;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
 import ru.practicum.category.Category;
 import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.dto.NewCategoryDto;
@@ -13,7 +12,7 @@ public interface CategoryService {
 
     CategoryDto addCategory(NewCategoryDto dto) throws AlreadyExistsException;
 
-    List<CategoryDto> getCategory(int from, int size);
+    Page<CategoryDto> getCategories(int from, int size);
 
     CategoryDto getCategoryById(Long id) throws NotFoundException;
 

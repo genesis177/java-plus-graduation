@@ -1,6 +1,8 @@
 package ru.practicum.event.services.interfaces;
 
 import org.apache.coyote.BadRequestException;
+import org.springframework.data.domain.Page;
+import ru.practicum.common.exception.BadArgumentsException;
 import ru.practicum.common.exception.ConflictException;
 import ru.practicum.common.exception.NotFoundException;
 import ru.practicum.event.dto.EventAdminUpdateDto;
@@ -15,11 +17,11 @@ public interface AdminEventService {
             throws NotFoundException, BadRequestException, ConflictException;
 
 
-    List<EventFullDto> getEventsForAdmin(List<Long> users,
+    Page<EventFullDto> getEventsForAdmin(List<Long> users,
                                          List<String> states,
                                          List<Long> categories,
                                          LocalDateTime rangeStart,
                                          LocalDateTime rangeEnd,
                                          Integer from,
-                                         Integer size) throws BadRequestException;
+                                         Integer size) throws BadArgumentsException;
 }

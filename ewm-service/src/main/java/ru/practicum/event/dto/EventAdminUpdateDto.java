@@ -1,6 +1,5 @@
 package ru.practicum.event.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import ru.practicum.event.enums.StateActionsAdmin;
@@ -26,7 +25,6 @@ public class EventAdminUpdateDto {
     @Size(min = 20, max = 7000)
     private String description;
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     @Future
     private LocalDateTime eventDate;
 
