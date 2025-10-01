@@ -1,7 +1,9 @@
 package ru.practicum.comment.services;
 
 import jakarta.transaction.Transactional;
+
 import java.time.LocalDateTime;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,8 +33,8 @@ public class PrivateCommentServiceImpl implements PrivateCommentService {
 
     @Override
     public CommentFullDto createComment(Long userId, Long eventId, CommentCreateOrUpdateDto dto) throws
-                                                                                                 NotFoundException,
-                                                                                                 ConflictException {
+            NotFoundException,
+            ConflictException {
         log.info("Создание комментария на уровне сервиса");
 
         User author = userRepository.findById(userId)
@@ -65,8 +67,8 @@ public class PrivateCommentServiceImpl implements PrivateCommentService {
 
     @Override
     public CommentFullDto updateComment(Long userId, Long eventId, Long commentId, CommentCreateOrUpdateDto dto) throws
-                                                                                                                 NotFoundException,
-                                                                                                                 ConflictException {
+            NotFoundException,
+            ConflictException {
         log.info("Обновление комментария на уровне сервиса");
 
         User author = userRepository.findById(userId)
@@ -77,9 +79,16 @@ public class PrivateCommentServiceImpl implements PrivateCommentService {
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         log.info("Передан идентификатор события обновляемого комментария: {}", event.getId());
 
-        Comment comment = commentRepository.findById(eventId)
+        // исправила - было eventId, стало commentId
+        Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
         log.info("Передан идентификатор обновляемого комментария: {}", comment.getId());
+
+        // Добавляем проверку, что комментарий относится к указанному событию
+        if (!comment.getEvent().getId().equals(event.getId())) {
+            throw new ConflictException(
+                    "Field: event. Error: комментарий не относится к событию с id=" + event.getId());
+        }
 
         if (!comment.getAuthor().getId().equals(author.getId())) {
             throw new ConflictException("Field: author. Error: пользователь с id=" + author.getId()
