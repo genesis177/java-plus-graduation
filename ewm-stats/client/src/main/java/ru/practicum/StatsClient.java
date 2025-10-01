@@ -1,65 +1,59 @@
 package ru.practicum;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import ru.practicum.dto.HitDto;
+import ru.practicum.dto.StatsDto;
 
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StatsClient {
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     protected final RestTemplate rest;
 
-    public ResponseEntity<Object> postHit(HitDto hitDto) {
-        return makeAndSendRequest(HttpMethod.POST, "/hit", null, hitDto);
+    @Value("${stats-server.url:${STATS_SERVER_URL:http://stats-server:9090}}")
+    private String statsServerUrl;
+
+    public ResponseEntity<HitDto> postHit(HitDto endpointHitDto) {
+        String url = statsServerUrl + "/hit";
+        return rest.postForEntity(url, endpointHitDto, HitDto.class);
     }
 
-    public ResponseEntity<Object> getStats(String start,
-                                           String end,
-                                           List<String> uris,
-                                           Boolean unique) {
-        Map<String, Object> parameters = Map.of("start", start, "end", end, "uris", uris, "unique", unique);
-        return makeAndSendRequest(HttpMethod.GET, "/stats", parameters, null);
-    }
+    public List<StatsDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
+        String startStr = start.format(FORMATTER);
+        String endStr = end.format(FORMATTER);
 
-    private <T> ResponseEntity<Object> makeAndSendRequest(HttpMethod method, String path,
-                                                          @Nullable Map<String, Object> parameters, @Nullable T body) {
-        HttpEntity<T> requestEntity = new HttpEntity<>(body, defaultHeaders());
-        ResponseEntity<Object> responseEntity;
-        try {
-            if (parameters != null) {
-                responseEntity = rest.exchange(path, method, requestEntity, Object.class, parameters);
-            } else {
-                responseEntity = rest.exchange(path, method, requestEntity, Object.class);
+        StringBuilder urlBuilder = new StringBuilder(statsServerUrl)
+                .append("/stats?start=").append(startStr)
+                .append("&end=").append(endStr)
+                .append("&unique=").append(unique);
+
+        if (uris != null && !uris.isEmpty()) {
+            for (String uri : uris) {
+                urlBuilder.append("&uris=").append(uri);
             }
-        } catch (HttpStatusCodeException e) {
-            return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsByteArray());
         }
-        return prepare(responseEntity);
-    }
 
-    private static ResponseEntity<Object> prepare(ResponseEntity<Object> response) {
-        if (response.getStatusCode().is2xxSuccessful()) {
-            return response;
-        }
-        ResponseEntity.BodyBuilder responseBuilder = ResponseEntity.status(response.getStatusCode());
-        if (response.hasBody()) {
-            return responseBuilder.body(response.getBody());
-        }
-        return responseBuilder.build();
-    }
-
-    private HttpHeaders defaultHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-        return headers;
+        String url = urlBuilder.toString();
+        ResponseEntity<StatsDto[]> response = rest.exchange(
+                url,
+                HttpMethod.GET,
+                HttpEntity.EMPTY,
+                StatsDto[].class
+        );
+        return Arrays.asList(response.getBody());
     }
 }
