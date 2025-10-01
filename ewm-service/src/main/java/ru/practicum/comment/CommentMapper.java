@@ -1,6 +1,5 @@
 package ru.practicum.comment;
 
-import java.time.format.DateTimeFormatter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import ru.practicum.comment.dto.CommentCreateOrUpdateDto;
@@ -11,8 +10,6 @@ import ru.practicum.user.UserMapper;
 @UtilityClass
 @Slf4j
 public class CommentMapper {
-
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public Comment mapToComment(CommentCreateOrUpdateDto dto) {
         log.info("Преобразование модели {} в модель {} для сохранения", CommentCreateOrUpdateDto.class, Comment.class);
@@ -28,7 +25,7 @@ public class CommentMapper {
                 .author(UserMapper.mapToUserShortDto(comment.getAuthor()))
                 .event(EventMapper.mapToEventShortDto(comment.getEvent()))
                 .text(comment.getText())
-                .created(comment.getCreatedOn().format(DATE_TIME_FORMATTER))
+                .created(comment.getCreatedOn())
                 .build();
     }
 

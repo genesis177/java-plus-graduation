@@ -19,9 +19,10 @@ import ru.practicum.event.enums.States;
 import ru.practicum.user.User;
 import ru.practicum.user.UserRepository;
 
-@Service
+@Transactional
 @RequiredArgsConstructor
 @Slf4j
+@Service
 public class PrivateCommentServiceImpl implements PrivateCommentService {
 
     private final UserRepository userRepository;
@@ -29,7 +30,6 @@ public class PrivateCommentServiceImpl implements PrivateCommentService {
     private final CommentRepository commentRepository;
 
     @Override
-    @Transactional
     public CommentFullDto createComment(Long userId, Long eventId, CommentCreateOrUpdateDto dto) throws
                                                                                                  NotFoundException,
                                                                                                  ConflictException {
@@ -64,7 +64,6 @@ public class PrivateCommentServiceImpl implements PrivateCommentService {
     }
 
     @Override
-    @Transactional
     public CommentFullDto updateComment(Long userId, Long eventId, Long commentId, CommentCreateOrUpdateDto dto) throws
                                                                                                                  NotFoundException,
                                                                                                                  ConflictException {
@@ -105,7 +104,6 @@ public class PrivateCommentServiceImpl implements PrivateCommentService {
     }
 
     @Override
-    @Transactional
     public void deleteComment(Long userId, Long eventId, Long commentId) throws NotFoundException, ConflictException {
         log.info("Удаление комментария на уровне сервиса");
 

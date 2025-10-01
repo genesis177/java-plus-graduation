@@ -1,5 +1,6 @@
 package ru.practicum.comment.dto;
 
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,5 +18,5 @@ public class CommentFullDto {
     private UserShortDto author;
     private EventShortDto event;
     private String text;
-    private String created;
+    private LocalDateTime created;
 }
