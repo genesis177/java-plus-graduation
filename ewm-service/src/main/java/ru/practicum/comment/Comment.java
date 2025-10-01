@@ -28,7 +28,7 @@ import ru.practicum.user.User;
 public class Comment {
 
     /**
-     * Идентифиептор
+     * Идентификатор
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
