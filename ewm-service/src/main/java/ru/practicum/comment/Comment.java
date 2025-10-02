@@ -9,10 +9,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import ru.practicum.event.Event;
 import ru.practicum.user.User;
 
@@ -21,10 +23,11 @@ import ru.practicum.user.User;
  */
 @Entity
 @Table(name = "comments")
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Getter
+@Setter
 public class Comment {
 
     /**
@@ -60,4 +63,24 @@ public class Comment {
      */
     @Column(name = "created_on")
     private LocalDateTime createdOn;
+
+    @Override
+    public final boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Comment comment)) {
+            return false;
+        }
+
+        return Objects.equals(id, comment.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
 }

@@ -12,14 +12,14 @@ import ru.practicum.user.UserMapper;
 public class CommentMapper {
 
     public Comment mapToComment(CommentCreateOrUpdateDto dto) {
-        log.info("Преобразование модели {} в модель {} для сохранения", CommentCreateOrUpdateDto.class, Comment.class);
+        log.debug("Преобразование модели {} в модель {} для сохранения", CommentCreateOrUpdateDto.class, Comment.class);
         return Comment.builder()
                 .text(dto.getText())
                 .build();
     }
 
     public CommentFullDto mapToCommentFullDto(Comment comment) {
-        log.info("Преобразование модели {} в модель {}", Comment.class, CommentFullDto.class);
+        log.debug("Преобразование модели {} в модель {}", Comment.class, CommentFullDto.class);
         return CommentFullDto.builder()
                 .id(comment.getId())
                 .author(UserMapper.mapToUserShortDto(comment.getAuthor()))
@@ -30,7 +30,7 @@ public class CommentMapper {
     }
 
     public void updateFields(Comment comment, CommentCreateOrUpdateDto dto) {
-        log.info("Преобразование модели {} в модель {} для обновления", CommentCreateOrUpdateDto.class, Comment.class);
+        log.debug("Преобразование модели {} в модель {} для обновления", CommentCreateOrUpdateDto.class, Comment.class);
         if (!(dto.getText() == null || dto.getText().trim().isBlank())) {
             comment.setText(dto.getText());
         }
