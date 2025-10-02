@@ -1,9 +1,7 @@
 package ru.practicum.comment.services;
 
 import jakarta.transaction.Transactional;
-
 import java.time.LocalDateTime;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,7 +19,6 @@ import ru.practicum.event.enums.States;
 import ru.practicum.user.User;
 import ru.practicum.user.UserRepository;
 
-@Transactional
 @RequiredArgsConstructor
 @Slf4j
 @Service
@@ -32,9 +29,10 @@ public class PrivateCommentServiceImpl implements PrivateCommentService {
     private final CommentRepository commentRepository;
 
     @Override
+    @Transactional
     public CommentFullDto createComment(Long userId, Long eventId, CommentCreateOrUpdateDto dto) throws
-            NotFoundException,
-            ConflictException {
+                                                                                                 NotFoundException,
+                                                                                                 ConflictException {
         log.info("Создание комментария на уровне сервиса");
 
         User author = userRepository.findById(userId)
@@ -66,9 +64,10 @@ public class PrivateCommentServiceImpl implements PrivateCommentService {
     }
 
     @Override
+    @Transactional
     public CommentFullDto updateComment(Long userId, Long eventId, Long commentId, CommentCreateOrUpdateDto dto) throws
-            NotFoundException,
-            ConflictException {
+                                                                                                                 NotFoundException,
+                                                                                                                 ConflictException {
         log.info("Обновление комментария на уровне сервиса");
 
         User author = userRepository.findById(userId)
@@ -113,6 +112,7 @@ public class PrivateCommentServiceImpl implements PrivateCommentService {
     }
 
     @Override
+    @Transactional
     public void deleteComment(Long userId, Long eventId, Long commentId) throws NotFoundException, ConflictException {
         log.info("Удаление комментария на уровне сервиса");
 
