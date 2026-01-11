@@ -12,7 +12,7 @@ public enum RequestStatus {
     REJECTED,
 
     /**
-     * На рассматрении
+     * На рассмотрении
      */
     PENDING,
 
